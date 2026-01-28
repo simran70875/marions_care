@@ -42,7 +42,7 @@ exports.createCustomer = async (req, res) => {
       lastName,
       email,
       userId: user._id,
-      status: "Active",
+      status: "active",
     });
 
     // 5️⃣ Send email
@@ -68,29 +68,41 @@ exports.createCustomer = async (req, res) => {
   }
 };
 
-
 exports.getCustomers = async (req, res) => {
   try {
-    const { search = "", page = 1, limit = 10 } = req.query;
+    const {
+      search = "",
+      page = 1,
+      limit = 10,
+      status, // 👈 from tabs
+    } = req.query;
 
     const query = {
       isDeleted: false,
-      $or: [
+    };
+
+    // 🔍 Search
+    if (search) {
+      query.$or = [
         { firstName: { $regex: search, $options: "i" } },
         { lastName: { $regex: search, $options: "i" } },
         { email: { $regex: search, $options: "i" } },
-        { customerIdNo: { $regex: search, $options: "i" } }, // if exists
-      ],
-    };
+        { clientIdNo: { $regex: search, $options: "i" } },
+      ];
+    }
 
-    const skip = (page - 1) * limit;
+    // 📌 Status filter
+    if (status && status !== "all") {
+      query.status = status;
+    }
+
+    const skip = (Number(page) - 1) * Number(limit);
 
     const [customers, total] = await Promise.all([
       Customer.find(query)
-        .populate("userId", "isActive role")
+        .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(Number(limit))
-        .sort({ createdAt: -1 }),
+        .limit(Number(limit)),
 
       Customer.countDocuments(query),
     ]);
@@ -109,22 +121,29 @@ exports.getCustomers = async (req, res) => {
   }
 };
 
-
 exports.getCustomerById = async (req, res) => {
   try {
-    const customer = await Customer.findById(req.params.id)
-      .populate("userId", "email isActive role");
+    const customer = await Customer.findById(req.params.id).populate("userId", "email status role").lean();
 
     if (!customer || customer.isDeleted) {
       return res.status(404).json({ message: "Customer not found" });
     }
 
-    res.json(customer);
+
+    const data = {
+      ...customer,
+      adminComments: [],
+      aboutMe: [],
+      preferredCarers: [],
+      totalPreferredCarerHours: [],
+    }
+    console.log(data)
+
+    res.json(data);
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 exports.updateCustomer = async (req, res) => {
   try {
@@ -151,7 +170,7 @@ exports.deleteCustomer = async (req, res) => {
       {
         isDeleted: true,
         deletedAt: new Date(),
-        status: "Inactive",
+        status: "inactive",
       },
       { new: true }
     );
@@ -166,6 +185,22 @@ exports.deleteCustomer = async (req, res) => {
   }
 };
 
+exports.statusUpdate = async (req, res) => {
+  try {
+    const customer = await Customer.findByIdAndUpdate(
+      req.params.id,
+      {
+        status: req.body.status,
+      },
+      { new: true }
+    );
+
+    res.json({ message: "Status Updated", customer });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 exports.restoreCustomer = async (req, res) => {
   try {
     const customer = await Customer.findByIdAndUpdate(
@@ -173,7 +208,7 @@ exports.restoreCustomer = async (req, res) => {
       {
         isDeleted: false,
         deletedAt: null,
-        status: "Active",
+        status: "active",
       },
       { new: true }
     );
@@ -236,4 +271,63 @@ exports.restoreArchivedCustomer = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+exports.updateCustomerContacts = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { contact } = req.body;
+
+    if (!contact || !contact.name || !contact.contact) {
+      return res.status(400).json({ message: "Invalid contact data" });
+    }
+
+    let customer;
+
+    // 🔁 UPDATE EXISTING CONTACT
+    if (contact._id) {
+      customer = await Customer.findOneAndUpdate(
+        {
+          _id: id,
+          "contacts._id": contact._id,
+          isDeleted: false,
+        },
+        {
+          $set: {
+            "contacts.$.name": contact.name,
+            "contacts.$.contact": contact.contact,
+          },
+        },
+        { new: true }
+      );
+    }
+    // ➕ ADD NEW CONTACT
+    else {
+      customer = await Customer.findOneAndUpdate(
+        { _id: id, isDeleted: false },
+        {
+          $push: {
+            contacts: {
+              name: contact.name,
+              contact: contact.contact,
+            },
+          },
+        },
+        { new: true }
+      );
+    }
+
+    if (!customer) {
+      return res.status(404).json({ message: "Customer not found" });
+    }
+
+    res.json({
+      message: "Contact saved successfully",
+      contacts: customer.contacts,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 

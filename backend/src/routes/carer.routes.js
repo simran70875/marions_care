@@ -7,6 +7,7 @@ const {
   deleteCarer,
   archiveCarer,
   restoreArchivedCarer,
+  statusUpdate
 } = require("../controllers/carer.controller.js");
 
 const{ protect } =require("../middlewares/auth.middleware.js");
@@ -22,7 +23,8 @@ router.get("/", getCarers);
 router.get("/:id", getCarerById);
 router.put("/:id", updateCarer);
 router.delete("/:id", deleteCarer);
-router.patch("/:id/archive", archiveCarer);
-router.patch("/:id/archive/restore", restoreArchivedCarer);
+router.patch("/archive/:id", archiveCarer);
+router.patch("/archive/restore/:id", restoreArchivedCarer);
+router.put("/status/:id", statusUpdate);
 
 module.exports = router;

@@ -21,7 +21,6 @@ const carerSchema = new mongoose.Schema(
     // 🆔 IDs
     carerIdNo: {
       type: String,
-      unique: true,
       required: true,
     },
 
@@ -68,7 +67,7 @@ const carerSchema = new mongoose.Schema(
     // ⚙️ Status & settings
     status: {
       type: String,
-      enum: ["active", "anactive", "archived"],
+      enum: ["active", "inactive", "archived"],
       default: "active",
     },
 

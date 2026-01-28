@@ -7,6 +7,8 @@ const {
   deleteCustomer,
   archiveCustomer,
   restoreArchivedCustomer,
+  updateCustomerContacts,
+  statusUpdate
 } = require("../controllers/customer.controller.js");
 
 const { protect } = require("../middlewares/auth.middleware.js");
@@ -22,7 +24,9 @@ router.get("/", getCustomers);
 router.get("/:id", getCustomerById);
 router.put("/:id", updateCustomer);
 router.delete("/:id", deleteCustomer);
-router.patch("/:id/archive", archiveCustomer);
-router.patch("/:id/archive/restore", restoreArchivedCustomer);
+router.patch("/archive/:id", archiveCustomer);
+router.patch("/archive/restore/:id", restoreArchivedCustomer);
+router.put("/contacts/:id", updateCustomerContacts);
+router.put("/status/:id", statusUpdate);
 
 module.exports = router;

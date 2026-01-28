@@ -7229,7 +7229,7 @@ export default function CustomerPage() {
           <Button
             variant="contained"
             color="primary"
-            onClick={() => navigate("/addClient")}
+            onClick={() => navigate("/customers/addClient")}
           >
             + Add Customer
           </Button>

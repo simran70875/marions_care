@@ -11,9 +11,9 @@ export default function ProtectedRoute({
   children,
   role,
 }: ProtectedRouteProps) {
-  const { isAuthenticated, role: userRole } = useSelector(
-    (state: RootState) => state.auth,
-  );
+  const { isAuthenticated, role: userRole } = useSelector((state: RootState) => state.auth);
+
+  console.log("isAuthenticated", isAuthenticated)
 
   if (!isAuthenticated) {
     return <Navigate to="/" replace />;
@@ -22,9 +22,7 @@ export default function ProtectedRoute({
   // allow admin + superadmin
 
   if (
-    userRole &&
-    role === "admin" &&
-    !["admin", "superadmin"].includes(userRole)
+    userRole && role === "admin" &&  !["admin", "superadmin"].includes(userRole)
   ) {
     return <Navigate to="/" replace />;
   }

@@ -6,17 +6,24 @@ import Button from "../ui/button/Button";
 import { useNavigate } from "react-router";
 import { useDispatch } from "react-redux";
 import { loginSuccess } from "../../store/slices/authSlice";
-import api from "../../api/axios";
-import { API_PATHS } from "../../utils/config";
 import toast from "react-hot-toast";
+import { authService } from "../../services/auth.service";
+import { useApi } from "../../hooks/useApi";
 
 export default function SignInForm() {
-  const [activeTab, setActiveTab] = useState<"superadmin" | "carer">("superadmin");
+  const [activeTab, setActiveTab] = useState<"superadmin" | "carer">(
+    "superadmin",
+  );
   const [showPassword, setShowPassword] = useState(false);
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
+  const { call, loading } = useApi<{
+    token: string;
+    user: any;
+  }>();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,19 +31,21 @@ export default function SignInForm() {
     const toastId = toast.loading("Signing in...");
 
     try {
-      const res = await api.post(API_PATHS.LOGIN, {
-        email: userId,
-        password,
-        role: activeTab,
-      });
+      const data = await call(
+        authService.login({
+          email: userId,
+          password,
+          role: activeTab,
+        }),
+      );
 
-      const { token, user } = res.data;
+      const { token, user } = data;
 
-      // Store token
-      const storageKey = activeTab === "superadmin" ? "adminToken" : "carerToken";
+      const isAdmin = user.role === "superadmin" || user.role === "admin";
+      const storageKey = isAdmin ? "adminToken" : "carerToken";
+
       localStorage.setItem(storageKey, token);
 
-      // Redux
       dispatch(
         loginSuccess({
           user,
@@ -47,14 +56,9 @@ export default function SignInForm() {
 
       toast.success("Login successful 🎉", { id: toastId });
 
-      // Redirect
-      if (activeTab === "superadmin") {
-        navigate("/dashboard");
-      } else {
-        navigate("/carer/dashboard");
-      }
+      navigate(isAdmin ? "/dashboard" : "/carer/dashboard");
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Invalid credentials", {
+      toast.error(err?.response?.data?.message || "Login failed", {
         id: toastId,
       });
     }
@@ -137,8 +141,8 @@ export default function SignInForm() {
                 </div> */}
 
                 <div>
-                  <Button className="w-full" size="sm">
-                    "Sign in"
+                  <Button className="w-full" size="sm" disabled={loading}>
+                    {loading ? "Signing in..." : "Sign in"}
                   </Button>
                 </div>
               </div>

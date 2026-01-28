@@ -19,8 +19,7 @@ export default function UserDropdown() {
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
-   const adminUser = useSelector((state: RootState) => state.auth.user);
-
+  const adminUser = useSelector((state: RootState) => state.auth.user);
 
   return (
     <div className="relative">
@@ -29,20 +28,23 @@ export default function UserDropdown() {
         className="flex items-center text-gray-700 dropdown-toggle dark:text-gray-400"
       >
         <span className="mr-3 overflow-hidden rounded-full h-11 w-11 bg-blue-800 uppercase flex items-center justify-center text-white">
-
-          {adminUser?.firstName[0]} {adminUser?.lastName[0]}
-
+          {adminUser?.fullName[0]} {adminUser?.fullName[2]}
           {/* <img src="./images/user/owner.jpg" alt="User" /> */}
         </span>
 
         <div>
-          <span className="block mr-2 font-medium text-theme-sm">{adminUser?.firstName} {adminUser?.lastName}</span>
-          <p className="block mr-1 font-medium text-theme-sm text-left">{adminUser?.type}</p>
+          <span className="block mr-2 font-medium text-theme-sm">
+            {adminUser?.firstName} {adminUser?.lastName}
+          </span>
+          <p className="block mr-1 font-medium text-theme-sm text-left">
+            {adminUser?.type}
+          </p>
         </div>
 
         <svg
-          className={`stroke-gray-500 dark:stroke-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""
-            }`}
+          className={`stroke-gray-500 dark:stroke-gray-400 transition-transform duration-200 ${
+            isOpen ? "rotate-180" : ""
+          }`}
           width="18"
           height="20"
           viewBox="0 0 18 20"
@@ -153,7 +155,7 @@ export default function UserDropdown() {
         <div
           onClick={() => {
             dispatch(logout());
-            navigate("/signin")
+            navigate("/signin");
           }}
           className="flex items-center gap-3 px-3 py-2 mt-3 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
         >

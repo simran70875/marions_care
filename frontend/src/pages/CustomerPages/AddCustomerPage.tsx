@@ -1,455 +1,418 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router";
 import Select from "../../components/form/Select";
 import DatePicker from "../../components/form/date-picker";
 import Label from "../../components/form/Label";
 import Input from "../../components/form/input/InputField";
-import { useNavigate } from "react-router";
 
-// --- Mock Data (Use your actual data source) ---
-const titleOptions = [
-  { value: "mr", label: "Mr" },
-  { value: "ms", label: "Ms" },
-  { value: "mrs", label: "Mrs" },
-  { value: "dr", label: "Dr" },
-];
+import { useApi } from "../../hooks/useApi";
+import { customerServices } from "../../services/customerServices";
+import { useLocation } from "react-router";
 
 const genderOptions = [
-  { value: "male", label: "Male" },
-  { value: "female", label: "Female" },
-  { value: "other", label: "Other" },
+  { value: "male", label: "Male" },
+  { value: "female", label: "Female" },
+  { value: "other", label: "Other" },
 ];
 
 const maritalStatusOptions = [
-  { value: "single", label: "Single" },
-  { value: "married", label: "Married" },
+  { value: "single", label: "Single" },
+  { value: "married", label: "Married" },
 ];
 
 const contactMethodOptions = [
-  { value: "email", label: "Email" },
-  { value: "phone", label: "Phone" },
+  { value: "email", label: "Email" },
+  { value: "phone", label: "Phone" },
 ];
 
-// Custom styled Checkbox (You might need to create this component)
-const StyledCheckbox = ({ label, id }: { label: string; id: string }) => (
-  <div className="flex items-center space-x-2">
-    <input
-      id={id}
-      type="checkbox"
-      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:ring-offset-gray-900"
-    />
-    <label htmlFor={id} className="text-sm text-gray-700 dark:text-gray-300">
-      {label}
-    </label>
-  </div>
-);
-
-// Utility function to render a label and input/select/date picker in a grid cell
-const renderField = (
-  label: string,
-  id: string,
-  required: boolean,
-  type: "text" | "select" | "date" | "textarea" = "text",
-  options?: { value: string; label: string }[],
-  placeholder: string = ""
-) => {
-  let component;
-
-  switch (type) {
-    case "select":
-      component = (
-        <Select
-          options={options || []}
-          placeholder="Select"
-          onChange={() => { }}
-          className="dark:bg-dark-900"
-        />
-      );
-      break;
-    case "date":
-      component = (
-        <DatePicker id={id} placeholder="DD-MM-YYYY" onChange={() => { }} />
-      );
-      break;
-    case "textarea":
-      component = (
-        <textarea
-          id={id}
-          rows={3}
-          className="dark:bg-dark-900 h-auto w-full rounded-lg border border-gray-200 bg-transparent px-4 py-2 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-        />
-      );
-      break;
-    case "text":
-    default:
-      component = <Input type="text" id={id} placeholder={placeholder} />;
-      break;
-  }
-
-  return (
-    <div className="flex flex-col space-y-1" key={id}>
-      <Label htmlFor={id}>
-        {label} {required && <span className="text-red-500">*</span>}
-      </Label>
-      {component}
-    </div>
-  );
-};
 // --- End Utility Functions ---
 
 export default function AddCustomerPage() {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState(0);
-  const tabs = ["Customer Details", "Other Address", "Phones and Emails"];
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { call, loading } = useApi<any>();
+  const { call: getCustomerDetails } = useApi<any>();
+  const id = location.state?.id;
 
-  const handleTabChange = (index: number) => {
-    setActiveTab(index);
-  };
+  const [formData, setFormData] = useState({
+    // 🔗 Optional
+    userId: "",
 
-  // Define tab style to match the theme
-  const tabClasses = (index: number) =>
-    `px-4 py-2 text-sm font-medium transition-colors duration-200 ease-in-out ${activeTab === index
-      ? "border-b-2 border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400"
-      : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-    }`;
+    // 🆔 IDs
+    clientIdNo: "",
+    clientBio: "",
 
-  // Define Save Button style to match the theme (using a basic Tailwind button)
-  const SaveButton = () => (
-    <button
-      type="submit"
-      className="mt-6 w-full max-w-xs rounded-lg bg-blue-600 px-8 py-3 text-lg font-semibold uppercase text-white shadow-md transition duration-150 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
-    >
-      Save
-    </button>
-  );
+    // 🏥 Health identifiers
+    nhsNumber: "",
+    localPatientIdentifier: "",
+    healthAndCareNumber: "",
+    communityHealthIndexNumber: "",
 
-  return (
-    <div className="p-6 bg-white dark:bg-gray-900 min-h-screen">
-      {/* Page Header */}
-      <header className="mb-4">
-        <h1
-          onClick={() => navigate("/customers")}
-          className="text-xl font-bold text-black-700 cursor-pointer dark:text-blue-500"
-        >
-          Customer &gt; Add Customer
-        </h1>
-        <p className="text-sm font-semibold text-green-600 dark:text-green-400 mt-1">
-          New Customer go into Active Table as status Active
-        </p>
-      </header>
+    // 👤 Personal info
+    firstName: "",
+    lastName: "",
+    knownAs: "",
+    fullNameOfficial: "",
+    gender: "",
+    maritalStatus: "",
+    spouseName: "",
+    nationality: "",
+    dateOfBirth: "",
 
-      {/* Tab Navigation */}
-      <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
-        <nav className="-mb-px flex space-x-4">
-          {tabs.map((label, index) => (
-            <button
-              key={index}
-              onClick={() => handleTabChange(index)}
-              className={tabClasses(index)}
-            >
-              {label}
-            </button>
-          ))}
-        </nav>
-      </div>
+    // 📞 Contact
+    email: "",
+    contactNumber: "",
+    mobileNumber: "",
+    preferredContactMethod: "",
 
-      {/* Form Content */}
-      <form className="space-y-6">
-        {activeTab === 0 && (
-          <>
-            {/* Customer Details Section */}
-            <h2 className="text-lg font-bold text-gray-800 dark:text-white pb-2 border-b border-gray-100 dark:border-gray-800">
-              Customer Details
-            </h2>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {renderField("Customer ID", "clientId", false)}
-              {renderField("Title", "title", true, "select", titleOptions)}
-              {renderField("First Name", "firstName", true)}
-              {renderField("Last Name", "lastName", true)}
-              {renderField("Suffix", "suffix", false)}
-              {renderField(
-                "Customer Known As/Preferred Name",
-                "preferredName",
-                false
-              )}
-              {renderField("NHS Number", "nhsNumber", false)}
-              {renderField("Area", "area", false)}
-              {renderField("Date of Birth", "dob", true, "date")}
-              {renderField(
-                "Marital Status",
-                "maritalStatus",
-                false,
-                "select",
-                maritalStatusOptions
-              )}
-              {renderField("Spouse/Partner Name", "spousePartnerName", false)}
-              {renderField("Gender", "gender", false, "select", genderOptions)}
-              {renderField(
-                "First Contact Date",
-                "firstContactDate",
-                false,
-                "date"
-              )}
-              {renderField("Service Start", "serviceStart", false, "date")}
-            </div>
+    // 📅 Service & referral
+    firstContactDate: "",
+    serviceCommenced: "",
+    referralBy: "",
+    referralReason: "",
+    referralNote: "",
+    referralDate: "",
 
-            {/* Additional Information Section */}
-            <h2 className="text-lg font-bold text-gray-800 dark:text-white pt-4 pb-2 border-b border-gray-100 dark:border-gray-800">
-              Additional Information
-            </h2>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {renderField("Place of Birth", "placeOfBirth", false)}
-              {renderField(
-                "Nationality",
-                "nationality",
-                false,
-                "select",
-                genderOptions
-              )}{" "}
-              {/* Use appropriate options */}
-              {renderField(
-                "Ethnicity",
-                "ethnicity",
-                false,
-                "select",
-                genderOptions
-              )}{" "}
-              {/* Use appropriate options */}
-              {renderField("Religion", "religion", false)}
-              {renderField(
-                "Customer Full Name",
-                "clientFullName",
-                false,
-                "text",
-                undefined,
-                "i.e. name on official document"
-              )}
-              {renderField("Customer Alias", "clientAlias", false)}
-              {renderField("Data Sharing", "dataSharing", false, "select", [
-                { value: "yes", label: "Yes" },
-              ])}{" "}
-              {/* Placeholder select */}
-              {renderField("Unit", "unit", false)}
-            </div>
+    // 📍 Address
+    address: {
+      addressLine1: "",
+      addressLine2: "",
+      town: "",
+      county: "",
+      postcode: "",
+      country: "England",
+      unit: "",
+      area: "",
+    },
 
-            {/* Referral Info Section */}
-            <h2 className="text-lg font-bold text-gray-800 dark:text-white pt-4 pb-2 border-b border-gray-100 dark:border-gray-800">
-              Referral Info
-            </h2>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {renderField("Referral By", "referralBy", false)}
-              {renderField("Referral Reason", "referralReason", false)}
-              <div className="lg:col-span-3">
-                {renderField(
-                  "Referral Note",
-                  "referralNote",
-                  false,
-                  "textarea"
-                )}
-              </div>
-            </div>
+    // 💰 Finance (single source of truth)
+    finance: {
+      councilIdNo: "",
+      billingCode: "",
+      contractHours: "",
+      contractFee: "",
+      invoiceDiscount: "",
+      invoiceCycle: "",
+      payForTravel: "",
+      travelDeduction: "",
+      commission: "",
+      jobType: "",
+    },
 
-            {/* Other Identifier Section */}
-            <h2 className="text-lg font-bold text-gray-800 dark:text-white pt-4 pb-2 border-b border-gray-100 dark:border-gray-800">
-              Other Identifier
-            </h2>
-            <div className="flex flex-wrap gap-x-6 gap-y-3">
-              <StyledCheckbox
-                id="lpi"
-                label="Local Patient Identifier (if applicable)"
-              />
-              <StyledCheckbox id="hcn" label="Health and Care Number" />
-              <StyledCheckbox id="chin" label="Community Health Index Number" />
-              <StyledCheckbox id="other_id" label="Other" />
-            </div>
+    // 📝 Other
+    additionalInformation: "",
+    dataSharing: "",
 
-            {/* Contact Details Section (In Tab 0 for Main Contacts) */}
-            <h2 className="text-lg font-bold text-gray-800 dark:text-white pt-4 pb-2 border-b border-gray-100 dark:border-gray-800">
-              Main Contact Details
-            </h2>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {renderField("Contact Number", "contactNumber", false)}
-              {renderField("Mobile Number", "mobileNumber", false)}
-              {renderField("Email", "email", false)}
-              {renderField(
-                "Preferred Contact Method",
-                "preferredContactMethod",
-                false,
-                "select",
-                contactMethodOptions
-              )}
-            </div>
+    // ⚙️ System
+    status: "active",
+  });
 
-            {/* Add Address Section (In Tab 0 for Main Address) */}
-            <div className="flex items-center justify-between pt-4 pb-2 border-b border-gray-100 dark:border-gray-800">
-              <h2 className="text-lg font-bold text-gray-800 dark:text-white">
-                Main Address{" "}
-                <span className="text-gray-500 dark:text-gray-400 text-sm font-normal">
-                  (Permanent Residence)
-                </span>
-              </h2>
-              <button
-                type="button"
-                className="text-blue-600 dark:text-blue-400 text-sm hover:underline"
-              >
-                Use Location Address
-              </button>
-            </div>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {renderField("Search Address/Postcode", "searchAddress", false)}
-            </div>
-            {/* Address Lines - two columns */}
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              {renderField("Address Line 1", "addressLine1", false)}
-              {renderField("Address Line 2", "addressLine2", false)}
-              {renderField("Address Line 3", "addressLine3", false)}
-              {renderField("Address Line 4", "addressLine4", false)}
-              {renderField("Address Line 5", "addressLine5", false)}
-              {renderField("Postcode", "postcode", false)}
-            </div>
+  useEffect(() => {
+    if (!id) return;
 
-            {/* Finance Settings Section */}
-            <h2 className="text-lg font-bold text-gray-800 dark:text-white pt-4 pb-2 border-b border-gray-100 dark:border-gray-800">
-              Finance Settings
-            </h2>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {renderField("Council ID No.", "councilIdNo", false)}
-              {renderField("Contract Hours", "contractHours", false)}
-              {renderField("Contract Fee", "contractFee", false)}
-              {renderField("Billing Code", "billingCode", false)}
-              {renderField("Invoice Discount (%)", "invoiceDiscount", false)}
-              {renderField("Invoice Cycle", "invoiceCycle", false)}
-              {renderField("Pay for Travel", "payForTravel", false, "select", [
-                { value: "yes", label: "Yes" },
-                { value: "no", label: "No" },
-              ])}
-              {renderField("Travel Deduction", "travelDeduction", false)}
-              {renderField(
-                "Travel Calculations Include",
-                "travelCalculationsInclude",
-                false
-              )}
-              {renderField("Commission", "commission", false)}
-              {renderField("Job Type", "jobType", false)}
-            </div>
-            {/* Save Button - Displayed in every tab for submission */}
-            <div className="flex justify-center pt-8">
-              <SaveButton />
-            </div>
-          </>
-        )}
+    // Fetch customer details to edit
+    const fetchCustomer = async () => {
+      try {
+        const res = await getCustomerDetails(
+          customerServices.getUserDetail(id),
+        );
+        console.log(res);
+        if (res) {
+          // Populate formData with API response
+          const customer = res;
 
-        {activeTab === 1 && (
-          <>
-            {/* Other Address Tab Content */}
-            <h2 className="text-lg font-bold text-gray-800 dark:text-white pb-2 border-b border-gray-100 dark:border-gray-800">
-              Other Address (Secondary Residence)
-            </h2>
+          setFormData(customer);
+        }
+      } catch (err) {
+        console.error("Failed to fetch customer details", err);
+      }
+    };
 
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {renderField("Address Type", "otherAddressType", false, "select", [
-                { value: "temp", label: "Temporary" },
-                { value: "sec", label: "Secondary" },
-              ])}
-              {renderField("Search Address/Postcode", "otherSearchAddress", false)}
-            </div>
+    fetchCustomer();
+  }, [id]);
 
-            {/* Address Lines - two columns */}
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              {renderField("Address Line 1", "otherAddressLine1", false)}
-              {renderField("Address Line 2", "otherAddressLine2", false)}
-              {renderField("Address Line 3", "otherAddressLine3", false)}
-              {renderField("Address Line 4", "otherAddressLine4", false)}
-              {renderField("Address Line 5", "otherAddressLine5", false)}
-              {renderField("Postcode", "otherPostcode", false)}
-            </div>
+  const handleChange = (path: string, value: any) => {
+    setFormData((prev: any) => {
+      const keys = path.split(".");
+      const updated = { ...prev };
+      let obj = updated;
 
-            {/* Additional Notes for Other Address */}
-            <div className="pt-4">
-              {renderField(
-                "Notes for this Address",
-                "otherAddressNotes",
-                false,
-                "textarea"
-              )}
-            </div>
+      keys.slice(0, -1).forEach((k) => {
+        obj[k] = { ...obj[k] };
+        obj = obj[k];
+      });
 
-            {/* Add Another Address Button */}
-            <div className="flex justify-start pt-4">
-              <button
-                type="button"
-                className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors"
-              >
-                + Add Another Address
-              </button>
-            </div>
+      obj[keys[keys.length - 1]] = value;
+      return updated;
+    });
+  };
 
-            {/* Save Button */}
-            <div className="flex justify-center pt-8">
-              <SaveButton />
-            </div>
-          </>
-        )}
+  // Utility function to render a label and input/select/date picker in a grid cell
+  const renderField = (
+    label: string,
+    id: string, // can be "firstName" OR "address.area" OR "finance.contractFee"
+    required: boolean,
+    type: "text" | "select" | "date" | "textarea" = "text",
+    options?: { value: string; label: string }[],
+    placeholder: string = "",
+  ) => {
+    const value = id.split(".").reduce((acc: any, key) => acc?.[key], formData);
 
-        {activeTab === 2 && (
-          <>
-            {/* Phones and Emails Tab Content */}
-            <h2 className="text-lg font-bold text-gray-800 dark:text-white pb-2 border-b border-gray-100 dark:border-gray-800">
-              Additional Contact Details
-            </h2>
+    let component;
 
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {renderField(
-                "Secondary Contact Number",
-                "secondaryContactNumber",
-                false
-              )}
-              {renderField(
-                "Work/Other Mobile",
-                "workMobile",
-                false
-              )}
-              {renderField(
-                "Secondary Email",
-                "secondaryEmail",
-                false
-              )}
-              {renderField(
-                "Emergency Contact",
-                "emergencyContact",
-                false
-              )}
-            </div>
+    switch (type) {
+      case "select":
+        component = (
+          <Select
+            options={options || []}
+            placeholder="Select"
+            value={value || null} // ✅ correct
+            onChange={(val: string) => handleChange(id, val)}
+            className="dark:bg-dark-900"
+          />
+        );
+        break;
 
-            {/* Notes on Communication */}
-            <h2 className="text-lg font-bold text-gray-800 dark:text-white pt-4 pb-2 border-b border-gray-100 dark:border-gray-800">
-              Communication Preference Notes
-            </h2>
-            <div>
-              {renderField(
-                "Contact Notes",
-                "contactNotes",
-                false,
-                "textarea"
-              )}
-            </div>
+      case "date":
+        component = (
+          <DatePicker
+            id={id}
+            placeholder="DD-MM-YYYY"
+            defaultDate={value}
+            onChange={(date: any) =>
+              handleChange(id, date ? new Date(date).toISOString() : "")
+            }
+          />
+        );
+        break;
 
-            {/* Add Contact Button */}
-            <div className="flex justify-start pt-4">
-              <button
-                type="button"
-                className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors"
-              >
-                + Add Phone/Email (e.g., landline, other work email)
-              </button>
-            </div>
+      case "textarea":
+        component = (
+          <textarea
+            id={id}
+            rows={3}
+            value={value || ""}
+            onChange={(e) => handleChange(id, e.target.value)}
+            className="dark:bg-dark-900 h-auto w-full rounded-lg border border-gray-200 bg-transparent px-4 py-2 text-sm"
+          />
+        );
+        break;
 
-            {/* Save Button */}
-            <div className="flex justify-center pt-8">
-              <SaveButton />
-            </div>
-          </>
-        )}
-      </form>
-    </div>
-  );
+      default:
+        component = (
+          <Input
+            type="text"
+            id={id}
+            value={value || ""}
+            placeholder={placeholder}
+            onChange={(e: any) => handleChange(id, e.target.value)}
+          />
+        );
+    }
+
+    return (
+      <div className="flex flex-col space-y-1" key={id}>
+        <Label htmlFor={id}>
+          {label} {required && <span className="text-red-500">*</span>}
+        </Label>
+        {component}
+      </div>
+    );
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const toastId = toast.loading("Saving customer...");
+
+    if (!formData.firstName || !formData.lastName || !formData.dateOfBirth) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+
+    try {
+      if (id) {
+        await call(customerServices.editCustomer(id, formData));
+      } else {
+        await call(customerServices.addCustomer(formData));
+      }
+
+      toast.success("Customer added successfully", { id: toastId });
+      navigate("/customers/all");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to save", {
+        id: toastId,
+      });
+    }
+  };
+
+  const SaveButton = () => (
+    <button
+      type="submit"
+      disabled={loading}
+      className="mt-6 w-full max-w-xs rounded-lg bg-blue-600 px-8 py-3 text-lg font-semibold uppercase text-white shadow-md transition duration-150 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+    >
+      {loading ? (id ? "Updating..." : "Saving...") : id ? "Update" : "Save"}
+    </button>
+  );
+
+  return (
+    <div className="p-6 bg-white dark:bg-gray-900 min-h-screen">
+            {/* Page Header */}
+      <header className="mb-4">
+               {" "}
+        <h1
+          onClick={() => navigate("/customers")}
+          className="text-xl font-bold text-black-700 cursor-pointer dark:text-blue-500"
+        >
+                    Customer &gt; Add Customer        {" "}
+        </h1>
+               {" "}
+        <p className="text-sm font-semibold text-green-600 dark:text-green-400 mt-1">
+                    New Customer go into Active Table as status Active      
+           {" "}
+        </p>
+             {" "}
+      </header>
+            {/* Form Content */}
+      <form className="space-y-6" onSubmit={handleSubmit}>
+        <>
+          {/* ================= Customer Details ================= */}
+          <h2 className="text-lg font-bold text-gray-800 dark:text-white pb-2 border-b">
+            Customer Details
+          </h2>
+
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {renderField("Customer ID No.", "clientIdNo", false)}
+            {renderField("Customer Bio", "clientBio", false)}
+            {renderField("First Name", "firstName", true)}
+            {renderField("Last Name", "lastName", true)}
+            {renderField("Known As", "knownAs", false)}
+            {renderField("NHS Number", "nhsNumber", false)}
+            {renderField("Gender", "gender", false, "select", genderOptions)}
+            {renderField(
+              "Marital Status",
+              "maritalStatus",
+              false,
+              "select",
+              maritalStatusOptions,
+            )}
+            {renderField("Spouse Name", "spouseName", false)}
+            {renderField("Nationality", "nationality", false)}
+            {renderField("Date of Birth", "dateOfBirth", true, "date")}
+            {renderField(
+              "First Contact Date",
+              "firstContactDate",
+              false,
+              "date",
+            )}
+            {renderField(
+              "Service Commenced",
+              "serviceCommenced",
+              false,
+              "date",
+            )}
+          </div>
+
+          {/* ================= Additional Info ================= */}
+          <h2 className="text-lg font-bold text-gray-800 dark:text-white pt-4 pb-2 border-b">
+            Additional Information
+          </h2>
+
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {renderField("Official Full Name", "fullNameOfficial", false)}
+            {renderField("Data Sharing", "dataSharing", false, "select", [
+              { value: "yes", label: "Yes" },
+              { value: "no", label: "No" },
+            ])}
+            {renderField(
+              "Additional Information",
+              "additionalInformation",
+              false,
+            )}
+          </div>
+
+          {/* ================= Referral ================= */}
+          <h2 className="text-lg font-bold text-gray-800 dark:text-white pt-4 pb-2 border-b">
+            Referral Info
+          </h2>
+
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {renderField("Referral By", "referralBy", false)}
+            {renderField("Referral Reason", "referralReason", false)}
+            <div className="lg:col-span-3">
+              {renderField("Referral Note", "referralNote", false, "textarea")}
+            </div>
+            {renderField("Referral Date", "referralDate", false, "date")}
+          </div>
+
+          {/* ================= Contact ================= */}
+          <h2 className="text-lg font-bold text-gray-800 dark:text-white pt-4 pb-2 border-b">
+            Contact Details
+          </h2>
+
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {renderField("Contact Number", "contactNumber", false)}
+            {renderField("Mobile Number", "mobileNumber", false)}
+            {renderField("Email", "email", false)}
+            {renderField(
+              "Preferred Contact Method",
+              "preferredContactMethod",
+              false,
+              "select",
+              contactMethodOptions,
+            )}
+          </div>
+
+          {/* ================= Address ================= */}
+          <h2 className="text-lg font-bold text-gray-800 dark:text-white pt-4 pb-2 border-b">
+            Main Address
+          </h2>
+
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {renderField("Address Line 1", "address.addressLine1", false)}
+            {renderField("Address Line 2", "address.addressLine2", false)}
+            {renderField("Town", "address.town", false)}
+            {renderField("County", "address.county", false)}
+            {renderField("Postcode", "address.postcode", false)}
+            {renderField("Area", "address.area", true)}
+            {renderField("Unit", "address.unit", false)}
+          </div>
+
+          {/* ================= Finance ================= */}
+          <h2 className="text-lg font-bold text-gray-800 dark:text-white pt-4 pb-2 border-b">
+            Finance Settings
+          </h2>
+
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {renderField("Council ID No.", "finance.councilIdNo", false)}
+            {renderField("Billing Code", "finance.billingCode", false)}
+            {renderField("Contract Hours", "finance.contractHours", false)}
+            {renderField("Contract Fee", "finance.contractFee", false)}
+            {renderField("Invoice Discount", "finance.invoiceDiscount", false)}
+            {renderField("Invoice Cycle", "finance.invoiceCycle", false)}
+            {renderField(
+              "Pay for Travel",
+              "finance.payForTravel",
+              false,
+              "select",
+              [
+                { value: "", label: "" },
+                { value: "Yes", label: "Yes" },
+                { value: "No", label: "No" },
+              ],
+            )}
+            {renderField("Travel Deduction", "finance.travelDeduction", false)}
+            {renderField("Commission", "finance.commission", false)}
+            {renderField("Job Type", "finance.jobType", false)}
+          </div>
+
+          {/* ================= Submit ================= */}
+          <div className="flex justify-center pt-8">
+            <SaveButton />
+          </div>
+        </>
+      </form>
+    </div>
+  );
 }

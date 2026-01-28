@@ -1,6 +1,6 @@
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
-const { jwt } = require("jsonwebtoken");
+const jwt = require("jsonwebtoken");
 
 exports.login = async (req, res) => {
   try {
@@ -30,6 +30,7 @@ exports.login = async (req, res) => {
       token,
       role: user.role,
       userId: user._id,
+      user,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
