@@ -7,11 +7,13 @@ const {
   deleteCarer,
   archiveCarer,
   restoreArchivedCarer,
-  statusUpdate
+  statusUpdate,
+  bulkUploadCarers
 } = require("../controllers/carer.controller.js");
 
 const{ protect } =require("../middlewares/auth.middleware.js");
 const{ allowRoles } =require("../middlewares/role.middleware.js");
+const { upload } = require('../middlewares/upload.js');
 
 const router = express.Router();
 
@@ -26,5 +28,6 @@ router.delete("/:id", deleteCarer);
 router.patch("/archive/:id", archiveCarer);
 router.patch("/archive/restore/:id", restoreArchivedCarer);
 router.put("/status/:id", statusUpdate);
+router.post("/bulk-upload", upload.single("file"), bulkUploadCarers);
 
 module.exports = router;

@@ -279,7 +279,7 @@ export default function AddCarerPage() {
             {renderField("Gender", "gender", false, "select", genderOptions)}
             {renderField("Nationality", "nationality", false)}
             {renderField("Date of Birth", "dateOfBirth", true, "date")}
-            {renderField("Position", "position", false)}
+            {renderField("Position", "position", true)}
             {renderField("Start Date", "startDate", false, "date")}
             {renderField("Recruitment Source", "recruitmentSource", false)}
             {renderField("Area", "area", true)}

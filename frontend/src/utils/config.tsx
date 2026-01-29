@@ -1,6 +1,10 @@
 export const BASE_URL = "https://marions-care.onrender.com";
 export const IMAGE_URL = "https://marions-care.onrender.com/static";
 
+// export const BASE_URL = "http://localhost:8000";
+// export const IMAGE_URL = "http://localhost:8000/static";
+
+
 export const API_PATHS = {
   LOGIN: "/api/auth/login",
 
@@ -24,6 +28,7 @@ export const API_PATHS = {
   ARCHEIVE_CARER: "/api/carer/archive",
   RESTORE_ARCHEIVE_CARER: "/api/carer/archive/restore",
   EDIT_CARER_CONTACTS:"/api/carer/contacts",
+  UPLOAD_BULK_CARER: "/api/carer/bulk-upload",
 
   AGENTS_PROFIT: ``,
   COMPARE_ORDERS: ``,

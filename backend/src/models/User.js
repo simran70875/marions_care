@@ -34,8 +34,6 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Ensure email + role combination is unique
-userSchema.index({ email: 1, role: 1 }, { unique: true });
 userSchema.index({
   fullName: "text",
   email: "text",

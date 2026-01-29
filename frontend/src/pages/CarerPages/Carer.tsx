@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Box,
   Button,
@@ -123,10 +123,14 @@ const statusMap = ["active", "pending", "archived", "all"];
 
 export default function CarerPage() {
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importProgress, setImportProgress] = useState(0);
+
   const [activeTab, setActiveTab] = useState(0);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0); // 0-based for DataGrid
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(100);
   const [totalRows, setTotalRows] = useState(0);
   const [exportAnchor, setExportAnchor] = useState<null | HTMLElement>(null);
 
@@ -152,6 +156,7 @@ export default function CarerPage() {
 
     try {
       const res = await call(carerServices.getCarers(params));
+
       setTotalRows(res.pagination.total);
     } catch (err) {
       console.error(err);
@@ -169,6 +174,55 @@ export default function CarerPage() {
   const handleExportClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setExportAnchor(event.currentTarget);
   };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = [
+      "text/csv",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Please upload a CSV or Excel file");
+      return;
+    }
+
+    try {
+      setImportLoading(true);
+      setImportProgress(0);
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      await call(
+        carerServices.uploadBulk(formData, {
+          onUploadProgress: (progressEvent: any) => {
+            const percent = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total,
+            );
+            setImportProgress(percent);
+          },
+        }),
+      );
+
+      toast.success("Carers imported successfully");
+      fetchCarers();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to import carers");
+    } finally {
+      setImportLoading(false);
+      setImportProgress(0);
+      e.target.value = "";
+    }
+  };
+
   const handleExportClose = () => {
     setExportAnchor(null);
   };
@@ -224,37 +278,37 @@ export default function CarerPage() {
     { field: "carerIdNo", headerName: "Carer ID", width: 120 },
     { field: "firstName", headerName: "First Name", width: 120 },
     { field: "lastName", headerName: "Last Name", width: 120 },
-    { field: "knownAs", headerName: "Known As", width: 120 },
-    { field: "title", headerName: "Title", width: 100 },
+    // { field: "knownAs", headerName: "Known As", width: 120 },
+    // { field: "title", headerName: "Title", width: 100 },
     { field: "gender", headerName: "Gender", width: 100 },
-    { field: "nationality", headerName: "Nationality", width: 120 },
-    {
-      field: "dateOfBirth",
-      headerName: "DOB",
-      width: 110,
-      renderCell: (params) => params.row.dateOfBirth?.split("T")[0] || "",
-    },
+    // { field: "nationality", headerName: "Nationality", width: 120 },
+    // {
+    //   field: "dateOfBirth",
+    //   headerName: "DOB",
+    //   width: 110,
+    //   renderCell: (params) => params.row.dateOfBirth?.split("T")[0] || "",
+    // },
 
     // Contact
-    { field: "email", headerName: "Email", width: 180 },
+    // { field: "email", headerName: "Email", width: 180 },
     { field: "primaryContactNo", headerName: "Primary Phone", width: 150 },
-    { field: "secondaryContactNo", headerName: "Secondary Phone", width: 150 },
-    { field: "workPhone", headerName: "Work Phone", width: 150 },
-    { field: "niNumber", headerName: "NI Number", width: 120 },
+    // { field: "secondaryContactNo", headerName: "Secondary Phone", width: 150 },
+    // { field: "workPhone", headerName: "Work Phone", width: 150 },
+    // { field: "niNumber", headerName: "NI Number", width: 120 },
 
     // Work & transport
     { field: "position", headerName: "Position", width: 150 },
-    {
-      field: "startDate",
-      headerName: "Start Date",
-      width: 120,
-      renderCell: (params) => params.row.startDate?.split("T")[0] || "",
-    },
-    {
-      field: "recruitmentSource",
-      headerName: "Recruitment Source",
-      width: 150,
-    },
+    // {
+    //   field: "startDate",
+    //   headerName: "Start Date",
+    //   width: 120,
+    //   renderCell: (params) => params.row.startDate?.split("T")[0] || "",
+    // },
+    // {
+    //   field: "recruitmentSource",
+    //   headerName: "Recruitment Source",
+    //   width: 150,
+    // },
     { field: "area", headerName: "Area", width: 120 },
     { field: "transportType", headerName: "Transport Type", width: 150 },
     {
@@ -556,13 +610,59 @@ export default function CarerPage() {
           <Tab label="All Carers" />
         </Tabs>
 
-        <Button
-          variant="outlined"
-          onClick={handleExportClick}
-          startIcon={<Download size={16} />}
-        >
-          Export
-        </Button>
+        <Box display="flex" alignItems="center" gap={10}>
+          <div>
+            <Button
+              variant="outlined"
+              onClick={handleImportClick}
+              startIcon={<Download size={16} />}
+              disabled={importLoading}
+            >
+              {importLoading ? "Importing..." : "Import"}
+            </Button>
+            {importLoading && (
+              <Box mt={1} width={250}>
+                <Typography variant="caption">
+                  Uploading: {importProgress}%
+                </Typography>
+                <Box
+                  sx={{
+                    height: 6,
+                    borderRadius: 3,
+                    backgroundColor: "#e0e0e0",
+                    overflow: "hidden",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      height: "100%",
+                      width: `${importProgress}%`,
+                      backgroundColor: "#1976d2",
+                      transition: "width 0.3s",
+                    }}
+                  />
+                </Box>
+              </Box>
+            )}
+          </div>
+
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept=".csv,.xlsx,.xls"
+            style={{ display: "none" }}
+          />
+
+          <Button
+            variant="outlined"
+            onClick={handleExportClick}
+            startIcon={<Download size={16} />}
+          >
+            Export
+          </Button>
+        </Box>
+
         <Menu
           anchorEl={exportAnchor}
           open={Boolean(exportAnchor)}
@@ -595,7 +695,7 @@ export default function CarerPage() {
             setPage(model.page);
             setPageSize(model.pageSize);
           }}
-          pageSizeOptions={[5, 10, 20]}
+          pageSizeOptions={[10, 20, 50, 100]}
           getRowId={(row) => row?._id}
         />
       </Box>
