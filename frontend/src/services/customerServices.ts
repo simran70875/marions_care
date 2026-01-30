@@ -10,4 +10,12 @@ export const customerServices = {
   updateStatus: (id: string, status : string) => api.put(`${API_PATHS.UPDATE_STATUS}/${id}`, { status }),
   deleteCustomer: (id: string) => api.delete(`${API_PATHS.DELETE_CUSTOMER}/${id}`),
 
+  uploadBulk: (formData: FormData, config = {}) =>
+    api.post(API_PATHS.UPLOAD_BULK_CUSTOMER, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      ...config,
+    }),
+
 };

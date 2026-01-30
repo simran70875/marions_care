@@ -152,7 +152,7 @@ exports.bulkUploadCarers = async (req, res) => {
     session.endSession();
 
     // --- Post-commit actions (SAFE) ---
-    fs.unlink(req.file.path, () => {});
+    fs.unlink(req.file.path, () => { });
 
     return res.status(201).json({
       message: "Bulk upload completed",
@@ -185,30 +185,20 @@ exports.getCarers = async (req, res) => {
       ],
     };
 
+    // ✅ ADD STATUS FILTER (ONLY IF PROVIDED)
+    if (status && status !== "all") {
+      query.status = status;
+    }
+
     const skip = (page - 1) * limit;
 
     let carersQuery = Carer.find(query)
-      .populate({
-        path: "userId",
-        select: "isActive role",
-        ...(status && {
-          match: {
-            isActive: status === "active",
-          },
-        }),
-      })
       .skip(skip)
       .limit(Number(limit))
       .sort({ createdAt: -1 });
 
     let carers = await carersQuery;
-
-    // 🔹 remove carers whose user didn't match status filter
-    if (status) {
-      carers = carers.filter((c) => c.userId);
-    }
-
-    const total = status ? carers.length : await Carer.countDocuments(query);
+    const total = await Carer.countDocuments(query);
 
     res.json({
       data: carers,

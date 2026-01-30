@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Box,
   Button,
@@ -10,13 +10,13 @@ import {
   Avatar,
   IconButton,
 } from "@mui/material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { GridColDef, GridRowId, GridRowSelectionModel } from "@mui/x-data-grid";
 import {
   Download,
   FileText,
   Printer,
   Copy,
-  Calendar,    
+  Calendar,
   Edit,
   Trash2,
 } from "lucide-react";
@@ -27,6 +27,7 @@ import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import toast from "react-hot-toast";
 import Select from "../../components/form/Select";
+import DataTable from "../../components/common/DataTable";
 
 // types/Customer.ts
 export interface Address {
@@ -113,17 +114,35 @@ const statusMap = ["active", "pending", "archived", "all"];
 
 export default function CustomerPage() {
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importProgress, setImportProgress] = useState(0);
+
   const [activeTab, setActiveTab] = useState(0);
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(0); // 0-based for DataGrid
-  const [pageSize, setPageSize] = useState(10);
   const [totalRows, setTotalRows] = useState(0);
   const [exportAnchor, setExportAnchor] = useState<null | HTMLElement>(null);
+  const [paginationModel, setPaginationModel] = useState<{
+    page: number;
+    pageSize: number;
+  }>({ page: 0, pageSize: 100 });
+
+  const [rowSelectionModel, setRowSelectionModel] =
+    useState<GridRowSelectionModel>({
+      type: "include",
+      ids: new Set<GridRowId>([]),
+    });
+
+  useEffect(() => {
+    console.log("Row selection model changed:", rowSelectionModel);
+  }, [rowSelectionModel]);
 
   const { data, loading, call } = useApi<{
     data: CustomerRow[];
     pagination: any;
   }>();
+
+  console.log("Customer data:", data);
 
   const fetchCustomers = async () => {
     const status = statusMap[activeTab];
@@ -134,8 +153,8 @@ export default function CustomerPage() {
       status: string;
     } = {
       search,
-      page: page + 1,
-      limit: pageSize,
+      page: paginationModel.page + 1,
+      limit: paginationModel.pageSize,
       status: status === "all" ? "" : status, // send empty string if 'all'
     };
     if (status !== "all") params.status = status;
@@ -150,7 +169,7 @@ export default function CustomerPage() {
 
   useEffect(() => {
     fetchCustomers();
-  }, [activeTab, search, page, pageSize]);
+  }, [activeTab, search, paginationModel]);
 
   const handleTabChange = (_: any, newValue: number) => {
     setActiveTab(newValue);
@@ -159,6 +178,55 @@ export default function CustomerPage() {
   const handleExportClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setExportAnchor(event.currentTarget);
   };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = [
+      "text/csv",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Please upload a CSV or Excel file");
+      return;
+    }
+
+    try {
+      setImportLoading(true);
+      setImportProgress(0);
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      await call(
+        customerServices.uploadBulk(formData, {
+          onUploadProgress: (progressEvent: any) => {
+            const percent = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total,
+            );
+            setImportProgress(percent);
+          },
+        }),
+      );
+
+      toast.success("Customers imported successfully");
+      fetchCustomers();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to import customers");
+    } finally {
+      setImportLoading(false);
+      setImportProgress(0);
+      e.target.value = "";
+    }
+  };
+
   const handleExportClose = () => {
     setExportAnchor(null);
   };
@@ -356,8 +424,7 @@ export default function CustomerPage() {
               title="Delete Customer"
               onClick={async () => {
                 const confirmed = window.confirm(
-                  "Are you sure you want to delete this customer? This is a soft delete — you can restore this customer within 30 days. After 30 days, the customer and all related data will be permanently deleted."
-
+                  "Are you sure you want to delete this customer? This is a soft delete — you can restore this customer within 30 days. After 30 days, the customer and all related data will be permanently deleted.",
                 );
 
                 if (!confirmed) return;
@@ -500,7 +567,7 @@ export default function CustomerPage() {
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
-              setPage(0);
+              setPaginationModel((prev) => ({ ...prev, page: 0 }));
             }}
             type="text"
             placeholder="Search or type command..."
@@ -544,13 +611,59 @@ export default function CustomerPage() {
           <Tab label="All Customers" />
         </Tabs>
 
-        <Button
-          variant="outlined"
-          onClick={handleExportClick}
-          startIcon={<Download size={16} />}
-        >
-          Export
-        </Button>
+        <Box display="flex" alignItems="center" gap={2}>
+          <div>
+            <Button
+              variant="outlined"
+              onClick={handleImportClick}
+              startIcon={<Download size={16} />}
+              disabled={importLoading}
+            >
+              {importLoading ? "Importing..." : "Import"}
+            </Button>
+            {importLoading && (
+              <Box mt={1} width={250}>
+                <Typography variant="caption">
+                  Uploading: {importProgress}%
+                </Typography>
+                <Box
+                  sx={{
+                    height: 6,
+                    borderRadius: 3,
+                    backgroundColor: "#e0e0e0",
+                    overflow: "hidden",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      height: "100%",
+                      width: `${importProgress}%`,
+                      backgroundColor: "#1976d2",
+                      transition: "width 0.3s",
+                    }}
+                  />
+                </Box>
+              </Box>
+            )}
+          </div>
+
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept=".csv,.xlsx,.xls"
+            style={{ display: "none" }}
+          />
+
+          <Button
+            variant="outlined"
+            onClick={handleExportClick}
+            startIcon={<Download size={16} />}
+          >
+            Export
+          </Button>
+        </Box>
+
         <Menu
           anchorEl={exportAnchor}
           open={Boolean(exportAnchor)}
@@ -571,8 +684,7 @@ export default function CustomerPage() {
         </Menu>
       </Box>
 
-      <Box sx={{ height: "600px", width: "100%" }}>
-        <DataGrid
+      {/* <DataGrid
           rows={data?.data || []}
           columns={columns}
           loading={loading}
@@ -585,8 +697,23 @@ export default function CustomerPage() {
           }}
           pageSizeOptions={[5, 10, 20]}
           getRowId={(row) => row?._id}
-        />
-      </Box>
+        /> */}
+
+      <DataTable
+        rows={data?.data || []}
+        columns={columns}
+        loading={loading}
+        rowCount={totalRows}
+        paginationMode="server"
+        paginationModel={paginationModel}
+        onPaginationModelChange={(model) => setPaginationModel(model)}
+        getRowId={(row: any) => row._id}
+        rowSelectionModel={rowSelectionModel}
+        onRowSelectionModelChange={(newSelection: any) => {
+          setRowSelectionModel(newSelection);
+        }}
+        pageSizeOptions={[10, 20, 50, 100]}
+      />
     </Box>
   );
 }

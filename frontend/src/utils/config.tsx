@@ -17,7 +17,7 @@ export const API_PATHS = {
   ARCHEIVE_CUSTOMER: "/api/customer/archive",
   RESTORE_ARCHEIVE_CUSTOMER: "/api/customer/archive/restore",
   EDIT_CUSTOMER_CONTACTS:"/api/customer/contacts",
-
+  UPLOAD_BULK_CUSTOMER: "/api/customer/bulk-upload",
 
   ADD_CARER: "/api/carer",
   EDIT_CARER: "/api/carer",

@@ -12,6 +12,7 @@ export function useApi<T>() {
       setError(null);
 
       const res = await promise; // Axios response
+      console.log("API Response:", res);
       setData(res.data); // unwrap data
       return res.data;
     } catch (err: any) {

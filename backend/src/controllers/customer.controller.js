@@ -3,6 +3,9 @@ const Customer = require("../models/Customer");
 const User = require("../models/User");
 const generatePassword = require("../utils/generatePassword");
 const sendMail = require("../utils/sendMail");
+const mongoose = require("mongoose");
+const XLSX = require("xlsx");
+const fs = require("fs");
 
 exports.createCustomer = async (req, res) => {
   try {
@@ -67,6 +70,162 @@ exports.createCustomer = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+/* ================= Utils ================= */
+const generateClientId = () => `CLI-${new mongoose.Types.ObjectId().toString().slice(-6)}`;
+const generateRandomEmail = () => {
+  return `cli-${Math.floor(1000 + Math.random() * 9000)}@dummy.local`;
+};
+
+exports.bulkUploadCustomers = async (req, res) => {
+  const session = await mongoose.startSession();
+  let transactionCommitted = false;
+
+  try {
+    session.startTransaction();
+
+    if (!req.file) {
+      return res.status(400).json({ message: "File is required" });
+    }
+
+    /* ===== Read Excel ===== */
+    const workbook = XLSX.readFile(req.file.path);
+    const sheetName = workbook.SheetNames[0];
+    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+    if (!rows.length) {
+      return res.status(400).json({ message: "File is empty" });
+    }
+
+    const usersToInsert = [];
+    const customersToInsert = [];
+
+    rows.forEach((row, index) => {
+      if (!row.Name || !row.Phone) return;
+
+      /* ===== Name handling ===== */
+      const nameParts = row.Name.trim().split(" ");
+      const firstName = nameParts.shift();
+      const lastName = nameParts.join(" ") || " ";
+      console.log(`Processing row ${index + 2}: ${firstName} ${lastName}`);
+
+      const hashedPassword = bcrypt.hashSync(generatePassword(), 10);
+
+      usersToInsert.push({
+        fullName: row.Name,
+        email: generateRandomEmail(row.Name),
+        password: hashedPassword,
+        role: "client",
+      });
+
+      const phoneRaw = row.Phone ? String(row.Phone) : "";
+
+      const rawPhones = phoneRaw
+        .split(",")
+        .map(p => p.trim())
+        .filter(Boolean);
+
+      const contacts = rawPhones.map((entry, index) => {
+        if (entry.includes("-")) {
+          const [name, phone] = entry.split("-").map(v => v.trim());
+
+          return {
+            name: name || (index === 0 ? "Primary" : "Secondary"),
+            contact: phone || "",
+          };
+        }
+
+        return {
+          name: index === 0 ? "Primary" : "Secondary",
+          contact: entry,
+        };
+      });
+
+
+      customersToInsert.push({
+        clientIdNo: row["No."] ? row["No."] : generateClientId(),
+
+        firstName,
+        lastName,
+        knownAs: row.Name,
+        fullNameOfficial: row.Name,
+
+        contactNumber: contacts[0]?.contact || "",
+        mobileNumber: contacts[1]?.contact || "",
+
+        contacts,
+
+        dateOfBirth: row.DOB ? new Date(row.DOB) : null,
+
+        status: row.Status.toLowerCase(),
+
+        additionalInformation: row.Details,
+
+        /* ===== Address ===== */
+        address: {
+          addressLine1: row.Address || "",
+          area: row.Area || "",
+          country: row.County || "",
+        },
+
+        /* ===== Finance ===== */
+        finance: {
+          councilIdNo: row["Council ID"],
+          jobType: row["Job Type"],
+        },
+
+        tags: row.Tags ? row.Tags.split('|').map(tag => tag.trim()) : [],
+
+        /* ===== Metadata ===== */
+        referralReason: row.Tags,
+        referralBy: row.Schedule,
+      });
+    });
+
+    if (!customersToInsert.length) {
+      return res.status(400).json({ message: "No valid rows found" });
+    }
+
+    /* ===== DB Insert ===== */
+    const createdUsers = await User.insertMany(usersToInsert, {
+      session,
+      ordered: true,
+    });
+
+    createdUsers.forEach((user, index) => {
+      customersToInsert[index].userId = user._id;
+    });
+
+    await Customer.insertMany(customersToInsert, {
+      session,
+      ordered: true,
+    });
+
+    /* ===== Commit ===== */
+    await session.commitTransaction();
+    transactionCommitted = true;
+    session.endSession();
+
+    /* ===== Cleanup ===== */
+    fs.unlink(req.file.path, () => { });
+
+    return res.status(201).json({
+      message: "Customer bulk upload completed",
+      totalRows: rows.length,
+      created: customersToInsert.length,
+    });
+  } catch (err) {
+    if (!transactionCommitted) {
+      await session.abortTransaction();
+    }
+    session.endSession();
+
+    return res.status(500).json({
+      message: err.message,
+    });
+  }
+};
+
 
 exports.getCustomers = async (req, res) => {
   try {

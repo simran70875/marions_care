@@ -10,7 +10,7 @@ const addressSchema = new mongoose.Schema({
   postcode: String,
   country: { type: String, default: "England" },
   unit: String,
-  area: { type: String, required: true },
+  area: { type: String, },
 });
 
 /* ================= Finance ================= */
@@ -40,7 +40,7 @@ const customerSchema = new mongoose.Schema(
     },
 
     // 🆔 IDs
-    clientIdNo: { type: String},
+    clientIdNo: { type: String, unique: true, required: true },
     clientBio: { type: String, },
 
     // 🏥 Health identifiers
@@ -51,7 +51,7 @@ const customerSchema = new mongoose.Schema(
 
     // 👤 Personal info
     firstName: { type: String, required: true },
-    lastName: { type: String, required: true },
+    lastName: { type: String, },
     knownAs: String,
     fullNameOfficial: String,
     gender: String,
@@ -87,7 +87,7 @@ const customerSchema = new mongoose.Schema(
     // ⚙️ Status & soft delete
     status: {
       type: String,
-      enum: ["active", "Inactive", "pending", "archived", "in-hospital"],
+      enum: ["active", "Inactive", "pending", "archived", "in-hospital" , "deceased", "rip", "duplicated"],
       default: "active",
     },
 
@@ -97,6 +97,8 @@ const customerSchema = new mongoose.Schema(
         contact: { type: String }
       }
     ],
+
+    tags: [String],
 
     isDeleted: {
       type: Boolean,

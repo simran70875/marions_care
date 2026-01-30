@@ -10,7 +10,7 @@ import {
   Avatar,
   IconButton,
 } from "@mui/material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { GridColDef, GridRowId, GridRowSelectionModel } from "@mui/x-data-grid";
 import {
   Download,
   FileText,
@@ -27,6 +27,7 @@ import { saveAs } from "file-saver";
 import toast from "react-hot-toast";
 import Select from "../../components/form/Select";
 import { carerServices } from "../../services/carerServices";
+import DataTable from "../../components/common/DataTable";
 
 // types/Carer.ts
 export interface Address {
@@ -56,8 +57,8 @@ export interface Finance {
 const statusOptions = [
   { value: "active", label: "Active" },
   { value: "inactive", label: "Inactive" },
-  { value: "pending", label: "Pending" },
   { value: "archived", label: "Archived" },
+  { value: "all", label: "All" },
 ];
 
 // types/Carer.ts
@@ -119,7 +120,7 @@ export interface CarerRow {
   name?: string;
 }
 
-const statusMap = ["active", "pending", "archived", "all"];
+const statusMap = ["active", "inactive", "archived", "all"];
 
 export default function CarerPage() {
   const navigate = useNavigate();
@@ -129,15 +130,30 @@ export default function CarerPage() {
 
   const [activeTab, setActiveTab] = useState(0);
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(0); // 0-based for DataGrid
-  const [pageSize, setPageSize] = useState(100);
+
+  const [paginationModel, setPaginationModel] = useState<{
+    page: number;
+    pageSize: number;
+  }>({ page: 0, pageSize: 100 });
+
   const [totalRows, setTotalRows] = useState(0);
   const [exportAnchor, setExportAnchor] = useState<null | HTMLElement>(null);
+  const [rowSelectionModel, setRowSelectionModel] =
+    useState<GridRowSelectionModel>({
+      type: "include",
+      ids: new Set<GridRowId>([]),
+    });
+
+  useEffect(() => {
+    console.log("Row selection model changed:", rowSelectionModel);
+  }, [rowSelectionModel]);
 
   const { data, loading, call } = useApi<{
     data: CarerRow[];
     pagination: any;
   }>();
+
+  // const totalPages = data?.pagination?.totalPages || 0;
 
   const fetchCarers = async () => {
     const status = statusMap[activeTab];
@@ -148,14 +164,16 @@ export default function CarerPage() {
       status: string;
     } = {
       search,
-      page: page + 1,
-      limit: pageSize,
+      page: paginationModel.page + 1,
+      limit: paginationModel.pageSize,
       status: status === "all" ? "" : status, // send empty string if 'all'
     };
     if (status !== "all") params.status = status;
 
     try {
       const res = await call(carerServices.getCarers(params));
+
+      console.log("Fetched carers:", res);
 
       setTotalRows(res.pagination.total);
     } catch (err) {
@@ -165,8 +183,7 @@ export default function CarerPage() {
 
   useEffect(() => {
     fetchCarers();
-  }, [activeTab, search, page, pageSize]);
-
+  }, [activeTab, search, paginationModel]);
   const handleTabChange = (_: any, newValue: number) => {
     setActiveTab(newValue);
   };
@@ -444,8 +461,8 @@ export default function CarerPage() {
       subtitle: "Manage all currently active carers.",
     },
     {
-      title: "Pending Carers",
-      subtitle: "Approve or reject pending carer requests.",
+      title: "Inactive Carers",
+      subtitle: "Approve or reject inactive carer requests.",
     },
     {
       title: "Archived Carers",
@@ -566,7 +583,6 @@ export default function CarerPage() {
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
-              setPage(0);
             }}
             type="text"
             placeholder="Search or type command..."
@@ -605,12 +621,12 @@ export default function CarerPage() {
           sx={{ minHeight: "44px" }}
         >
           <Tab label="Active Carers" />
-          <Tab label="Pending Carers" />
+          <Tab label="Inactive Carers" />
           <Tab label="Archived Carers" />
           <Tab label="All Carers" />
         </Tabs>
 
-        <Box display="flex" alignItems="center" gap={10}>
+        <Box display="flex" alignItems="center" gap={2}>
           <div>
             <Button
               variant="outlined"
@@ -683,22 +699,43 @@ export default function CarerPage() {
         </Menu>
       </Box>
 
-      <Box sx={{ height: "600px", width: "100%" }}>
-        <DataGrid
-          rows={data?.data || []}
-          columns={columns}
-          loading={loading}
-          rowCount={totalRows}
-          paginationMode="server"
-          paginationModel={{ page, pageSize }} // <-- use this instead of 'page' and 'pageSize'
-          onPaginationModelChange={(model) => {
-            setPage(model.page);
-            setPageSize(model.pageSize);
+      {/* {selectedRows.length > 0 && (
+        <Button
+          color="error"
+          variant="contained"
+          onClick={async () => {
+            if (!selectedRows.length) return alert("No rows selected");
+
+            const confirmed = confirm(`Delete ${selectedRows.length} carers?`);
+            if (!confirmed) return;
+
+            await Promise.all(
+              selectedRows.map((id) => carerServices.deleteCarer(id)),
+            );
+
+            toast.success("Selected carers deleted");
+            fetchCarers();
           }}
-          pageSizeOptions={[10, 20, 50, 100]}
-          getRowId={(row) => row?._id}
-        />
-      </Box>
+        >
+          Delete Selected
+        </Button>
+      )} */}
+
+      <DataTable
+        rows={data?.data || []}
+        columns={columns}
+        loading={loading}
+        rowCount={totalRows}
+        paginationMode="server"
+        paginationModel={paginationModel}
+        onPaginationModelChange={(model) => setPaginationModel(model)}
+        getRowId={(row: any) => row._id}
+        rowSelectionModel={rowSelectionModel}
+        onRowSelectionModelChange={(newSelection: any) => {
+          setRowSelectionModel(newSelection);
+        }}
+        pageSizeOptions={[10, 20, 50, 100]}
+      />
     </Box>
   );
 }

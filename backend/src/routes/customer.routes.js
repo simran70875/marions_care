@@ -8,9 +8,10 @@ const {
   archiveCustomer,
   restoreArchivedCustomer,
   updateCustomerContacts,
-  statusUpdate
+  statusUpdate,
+  bulkUploadCustomers
 } = require("../controllers/customer.controller.js");
-
+const { upload } = require('../middlewares/upload.js');
 const { protect } = require("../middlewares/auth.middleware.js");
 const { allowRoles } = require("../middlewares/role.middleware.js");
 
@@ -28,5 +29,6 @@ router.patch("/archive/:id", archiveCustomer);
 router.patch("/archive/restore/:id", restoreArchivedCustomer);
 router.put("/contacts/:id", updateCustomerContacts);
 router.put("/status/:id", statusUpdate);
+router.post("/bulk-upload", upload.single("file"), bulkUploadCustomers);
 
 module.exports = router;
