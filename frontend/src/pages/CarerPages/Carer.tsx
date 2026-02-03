@@ -28,6 +28,8 @@ import toast from "react-hot-toast";
 import Select from "../../components/form/Select";
 import { carerServices } from "../../services/carerServices";
 import DataTable from "../../components/common/DataTable";
+import { useDispatch } from "react-redux";
+import { setCarerContext } from "../../store/slices/selectedCarerSlice";
 
 // types/Carer.ts
 export interface Address {
@@ -257,6 +259,8 @@ export default function CarerPage() {
     "#FF5722",
   ];
 
+  const dispatch = useDispatch();
+
   const columns: GridColDef<CarerRow>[] = [
     // Avatar
     {
@@ -276,11 +280,20 @@ export default function CarerPage() {
             alignItems="center"
             height="100%"
             sx={{ cursor: "pointer" }}
-            onClick={() =>
-              navigate("/carers/addClient", {
-                state: { id: params.row._id },
-              })
-            }
+            onClick={() => {
+              dispatch(
+                setCarerContext({
+                  carerId: params.row._id,
+                  carerList:
+                    data?.data.map((c) => ({
+                      carerId: c._id,
+                      firstName: c.firstName,
+                      lastName: c.lastName,
+                    })) || [],
+                }),
+              );
+              navigate("/carer/view");
+            }}
           >
             <Avatar sx={{ bgcolor: avatarColors[colorIndex], color: "#fff" }}>
               {firstLetter}

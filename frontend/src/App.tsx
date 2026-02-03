@@ -474,6 +474,123 @@ export default function App() {
             element={<HolidaysOverviewYear />}
           />
         </Route>
+        <Route
+          element={
+            <ProtectedRoute role="admin">
+              <CustomerDetailsLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/customer/view" element={<ClientSummaryProfile />} />
+          <Route path="/customer/details" element={<CustomerDetailsPage />} />
+
+          <Route path="/customer/medication" element={<CustomerMedication />} />
+          <Route path="/customer/medication/emar" element={<EMARTracker />} />
+          <Route
+            path="/customer/medication/list"
+            element={<MedicationList />}
+          />
+          <Route
+            path="/customer/medication/list"
+            element={<MedicationList />}
+          />
+          <Route
+            path="/customer/medication/cabinet"
+            element={<MedsCabinet />}
+          />
+          <Route
+            path="/customer/medication/history-report"
+            element={<MedicationHistory />}
+          />
+          <Route
+            path="/customer/medication/audit-history"
+            element={<EMARHistory />}
+          />
+          <Route
+            path="/customer/medication/review-report"
+            element={<EMARReviewReport />}
+          />
+          <Route
+            path="/customer/medication/skip-report"
+            element={<MandatoryMedicationReport />}
+          />
+          <Route
+            path="/customer/medication/review-date-report"
+            element={<MedicationReviewDateReport />}
+          />
+          <Route
+            path="/customer/medication/alerts-dashboard"
+            element={<AlertsDashboard />}
+          />
+
+          <Route path="/customer/schedule" element={<ClientSchedulePage />} />
+
+          <Route path="/customer/edit/details" element={<EditClientForm />} />
+          <Route
+            path="/customer/edit/contacts"
+            element={<ClientContactsTable />}
+          />
+          <Route path="/customer/edit/about-me" element={<AboutMePage />} />
+
+          {/* customer plans  */}
+          <Route path="/customer/plans" element={<ClientPlans />} />
+          <Route
+            path="/customer/plans/details"
+            element={<ClientPlansOverview />}
+          />
+          <Route
+            path="/customer/plans/start-plan/:id"
+            element={<StartPlan />}
+          />
+          <Route
+            path="/customer/plans/start-plan/care-assessment"
+            element={<IntakeForm />}
+          />
+          <Route
+            path="/customer/plans/start-plan/tags-view"
+            element={<TagsView />}
+          />
+          <Route
+            path="/customer/plans/plan/web-view"
+            element={<ClientPlanWebView />}
+          />
+
+          {/* customer assessments  */}
+          <Route
+            path="/customer/assessments/dates"
+            element={<AssessmentPage />}
+          />
+          <Route
+            path="/customer/assessments/calendar"
+            element={<AssessmentCalendar />}
+          />
+          <Route
+            path="/customer/assessments/body"
+            element={<BodyAssessment />}
+          />
+          <Route
+            path="/customer/assessments/body/history"
+            element={<BodyAssessmentHistory />}
+          />
+          <Route
+            path="/customer/assessments/skin"
+            element={<SkinAssessment />}
+          />
+          <Route
+            path="/customer/assessments/skin/history"
+            element={<SkinAssessmentHistory />}
+          />
+
+          <Route
+            path="/customer/tasks/tracker"
+            element={<DigitalTaskSheet />}
+          />
+          <Route
+            path="/customer/tasks/history"
+            element={<DigitalTaskSheetHistory />}
+          />
+        </Route>
+        {/* Carer layouts screens */}
 
         {/* carer panel screens after carer login */}
         <Route

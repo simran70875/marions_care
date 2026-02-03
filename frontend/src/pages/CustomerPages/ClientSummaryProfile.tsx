@@ -9,11 +9,20 @@ import {
   Edit3,
   Star,
   Camera,
+  ArrowLeft,
 } from "lucide-react";
 import React, { useState, useRef, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { useApi } from "../../hooks/useApi";
 import { customerServices } from "../../services/customerServices";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "../../store";
+import toast from "react-hot-toast";
+import {
+  goToNextCustomer,
+  goToPreviousCustomer,
+} from "../../store/slices/selectedCustomerSlice";
+import { CustomerDetailsSkeleton } from "./CustomerDetailsSkeleton";
 
 // =================================================================
 // 1. TYPE DEFINITIONS & DUMMY DATA
@@ -127,21 +136,26 @@ export default function CustomerDetails() {
   });
 
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  const location = useLocation();
   const { call, loading } = useApi<any>();
-  const id = location.state?.id;
+  const { customerId, firstName, lastName, customerList } = useSelector(
+    (state: RootState) => state.selectedCustomer,
+  );
+
+  const currentIndex = customerList.findIndex(
+    (c) => c.customerId === customerId,
+  );
+  const hasNext = currentIndex < customerList.length - 1;
+  const hasPrevious = currentIndex > 0;
 
   // Fetch customer details to edit
   const fetchCustomer = async () => {
     try {
-      const res = await call(customerServices.getUserDetail(id));
-      console.log(res);
+      if (!customerId) return toast("Customer id is required to fetch details");
+      const res = await call(customerServices.getUserDetail(customerId));
       if (res) {
-        // Populate formData with API response
-        const customer = res;
-
-        setDetails(customer);
+        setDetails(res);
       }
     } catch (err) {
       console.error("Failed to fetch customer details", err);
@@ -149,10 +163,10 @@ export default function CustomerDetails() {
   };
 
   useEffect(() => {
-    if (!id) return;
+    if (!customerId) return;
 
     fetchCustomer();
-  }, [id]);
+  }, [customerId]);
 
   // Navigation Handler (Simulated)
   const handleNavigation = (path: string) => {
@@ -168,8 +182,6 @@ export default function CustomerDetails() {
       setProfileImage(imageUrl);
     }
   };
-
-  if (!details) return <div>Loading...</div>;
 
   const NotFoundWithAdd: React.FC<{ label: string; onAdd: () => void }> = ({
     label,
@@ -187,10 +199,10 @@ export default function CustomerDetails() {
   );
 
   const handleSaveContact = async () => {
-    if (!contactForm.name || !contactForm.contact) return;
+    if (!contactForm.name || !contactForm.contact || !customerId) return;
 
     await call(
-      customerServices.editCustomerContacts(id, {
+      customerServices.editCustomerContacts(customerId, {
         contact: contactForm, // _id included automatically if editing
       }),
     );
@@ -200,8 +212,9 @@ export default function CustomerDetails() {
     fetchCustomer();
   };
 
-  if (loading) return <>Loading...</>;
-
+  if (loading) {
+    return <CustomerDetailsSkeleton />;
+  }
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       {/* Top Bar / Navigation */}
@@ -215,12 +228,49 @@ export default function CustomerDetails() {
           </button>
         </div>
 
-        <div className="text-right">
-          <button className="text-purple-700 text-sm font-semibold hover:underline flex items-center mb-1">
-            View Next Client Profile <ArrowRight size={14} className="ml-1" />
-          </button>
+        <div className="flex flex-col items-end gap-1">
+          {/* Navigation Row */}
+          <div className="flex items-center gap-3 text-sm font-semibold">
+            {/* Previous */}
+            <button
+              onClick={() => {
+                dispatch(goToPreviousCustomer());
+                navigate("/customer/view");
+              }}
+              disabled={!hasPrevious}
+              className={`flex items-center gap-1 px-2 py-1 rounded-md transition ${hasPrevious ? "text-purple-600 hover:bg-purple-50" : "text-gray-300 cursor-not-allowed"}`}>
+              <ArrowLeft size={14} />
+              <span>Previous</span>
+            </button>
+
+            {/* Counter */}
+            <span className="text-xs font-medium text-gray-500">
+              {currentIndex + 1} <span className="mx-0.5">of</span>{" "}
+              {customerList.length}
+            </span>
+
+            {/* Next */}
+            <button
+              onClick={() => {
+                dispatch(goToNextCustomer());
+                navigate("/customer/view");
+              }}
+              disabled={!hasNext}
+              className={`flex items-center gap-1 px-2 py-1 rounded-md transition
+        ${
+          hasNext
+            ? "text-purple-600 hover:bg-purple-50"
+            : "text-gray-300 cursor-not-allowed"
+        }`}
+            >
+              <span>Next</span>
+              <ArrowRight size={14} />
+            </button>
+          </div>
+
+          {/* Subtext */}
           <div className="text-xs text-gray-500">
-            Favour Abodun -{" "}
+            {firstName} {lastName} —{" "}
             <span className="font-semibold text-purple-600">in</span>
           </div>
         </div>
@@ -268,35 +318,35 @@ export default function CustomerDetails() {
         <div className="col-span-1">
           <InfoCard
             title="Personal Details"
-            isActive={details.status === "active"}
+            isActive={details?.status === "active"}
             editable
             onEdit={() =>
               navigate("/customers/addClient", {
-                state: { id: id },
+                state: { id: customerId },
               })
             }
           >
             <DetailItem
               label="Name"
-              value={`${details.firstName} ${details.lastName}`}
+              value={`${details?.firstName} ${details?.lastName}`}
             />
-            <DetailItem label="Client No" value={details.clientIdNo || "—"} />
-            <DetailItem label="Gender" value={details.gender || "—"} />
+            <DetailItem label="Client No" value={details?.clientIdNo || "—"} />
+            <DetailItem label="Gender" value={details?.gender || "—"} />
             <DetailItem
               label="DOB"
               value={
-                details.dateOfBirth
-                  ? new Date(details.dateOfBirth).toLocaleDateString()
+                details?.dateOfBirth
+                  ? new Date(details?.dateOfBirth).toLocaleDateString()
                   : "—"
               }
             />
             <DetailItem
               label="Marital Status"
-              value={details.maritalStatus || "—"}
+              value={details?.maritalStatus || "—"}
             />
             <DetailItem
               label="Job Type"
-              value={details.finance?.jobType || "—"}
+              value={details?.finance?.jobType || "—"}
             />
           </InfoCard>
         </div>
@@ -313,23 +363,26 @@ export default function CustomerDetails() {
             editable
             onEdit={() =>
               navigate("/customers/addClient", {
-                state: { id: id },
+                state: { id: customerId },
               })
             }
           >
-            <DetailItem label="Area" value={details.address?.area || "—"} />
+            <DetailItem label="Area" value={details?.address?.area || "—"} />
             <DetailItem
               label="Address"
-              value={details.address?.addressLine1 || "—"}
+              value={details?.address?.addressLine1 || "—"}
             />
-            <DetailItem label="Town" value={details.address?.town || "—"} />
-            <DetailItem label="County" value={details.address?.county || "—"} />
+            <DetailItem label="Town" value={details?.address?.town || "—"} />
+            <DetailItem
+              label="County"
+              value={details?.address?.county || "—"}
+            />
             <DetailItem
               label="Post Code"
-              value={details.address?.postcode || "—"}
+              value={details?.address?.postcode || "—"}
             />
-            <DetailItem label="Phone" value={details.contactNumber || "—"} />
-            <DetailItem label="NHS number" value={details.nhsNumber || "—"} />
+            <DetailItem label="Phone" value={details?.contactNumber || "—"} />
+            <DetailItem label="NHS number" value={details?.nhsNumber || "—"} />
           </InfoCard>
         </div>
       </div>
@@ -349,7 +402,7 @@ export default function CustomerDetails() {
             <button
               onClick={() =>
                 navigate("/customers/addClient/about-me", {
-                  state: { id: id },
+                  state: { id: customerId },
                 })
               }
               className="flex items-center p-2 text-gray-600 hover:text-purple-600 bg-gray-100 hover:bg-purple-50 rounded-full transition-colors"
@@ -365,8 +418,8 @@ export default function CustomerDetails() {
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-          {details.aboutMe?.length ? (
-            details.aboutMe.map((item: any, index: number) => (
+          {details?.aboutMe?.length ? (
+            details?.aboutMe.map((item: any, index: number) => (
               <div key={index} className="space-y-1">
                 <p className="font-semibold text-gray-800">{item.question}</p>
                 <p className="text-gray-700 pl-4">{item.answer}</p>
@@ -377,7 +430,7 @@ export default function CustomerDetails() {
               label="About Me information"
               onAdd={() =>
                 navigate("/customers/addClient/about-me", {
-                  state: { id: id },
+                  state: { id: customerId },
                 })
               }
             />
@@ -385,7 +438,7 @@ export default function CustomerDetails() {
         </div>
 
         <div className="text-right text-xs text-gray-500 mt-6 pt-4 border-t border-gray-100">
-          Last Saved : {new Date(details.createdAt).toLocaleString()}
+          Last Saved : {new Date(details?.createdAt).toLocaleString()}
         </div>
       </div>
 
@@ -393,15 +446,15 @@ export default function CustomerDetails() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
         <SectionCard
           title="Client Bio"
-          badge={new Date(details.createdAt).toLocaleString()}
+          badge={new Date(details?.createdAt).toLocaleString()}
           badgeColor="bg-blue-100"
           onEdit={() =>
             navigate("/customers/addClient", {
-              state: { id: id },
+              state: { id: customerId },
             })
           }
         >
-          <p className="line-clamp-4 text-gray-600">{details.clientBio}</p>
+          <p className="line-clamp-4 text-gray-600">{details?.clientBio}</p>
           {/* <button className="mt-2 text-blue-600 text-xs font-medium hover:underline">
             View all
           </button> */}
@@ -410,7 +463,7 @@ export default function CustomerDetails() {
         <SectionCard title="Contacts">
           <div className="space-y-2">
             {details?.contacts?.length > 0 ? (
-              details.contacts.map((contact: any, index: number) => (
+              details?.contacts.map((contact: any, index: number) => (
                 <div
                   key={index}
                   className="pb-1 border-b border-gray-100 last:border-b-0 cursor-pointer"
@@ -453,19 +506,19 @@ export default function CustomerDetails() {
 
         <SectionCard
           title="Admin Comments"
-          badge={details.adminComments?.length?.toString()}
+          badge={details?.adminComments?.length?.toString()}
           badgeColor="bg-orange-100"
           onEdit={() =>
-            handleNavigation(`/customers/adminComments/${details._id}`)
+            handleNavigation(`/customers/adminComments/${details?._id}`)
           }
         >
-          {details.adminComments?.length ? (
+          {details?.adminComments?.length ? (
             <>
               <p className="text-gray-800 font-medium mb-1">
-                {details.adminComments[0]?.title || "Latest Comment"}
+                {details?.adminComments[0]?.title || "Latest Comment"}
               </p>
               <p className="line-clamp-5">
-                {details.adminComments[0]?.comment}
+                {details?.adminComments[0]?.comment}
               </p>
             </>
           ) : (
@@ -473,7 +526,7 @@ export default function CustomerDetails() {
               label="Admin comments"
               onAdd={() =>
                 handleNavigation(
-                  `/customers/addClient/admin-comments/${details._id}`,
+                  `/customers/addClient/admin-comments/${details?._id}`,
                 )
               }
             />
@@ -483,18 +536,18 @@ export default function CustomerDetails() {
         <SectionCard
           title="Preferred Carer"
           badge={
-            details.totalPreferredCarerHours
-              ? `${details.totalPreferredCarerHours} Total`
+            details?.totalPreferredCarerHours
+              ? `${details?.totalPreferredCarerHours} Total`
               : undefined
           }
           badgeColor="bg-green-100"
           onEdit={() =>
             handleNavigation(
-              `/customers/addClient/preferred-carers/${details._id}`,
+              `/customers/addClient/preferred-carers/${details?._id}`,
             )
           }
         >
-          {details.preferredCarers?.length ? (
+          {details?.preferredCarers?.length ? (
             <>
               <div className="grid grid-cols-[1fr_auto_auto] text-xs text-gray-500 border-b pb-1">
                 <span>Name</span>
@@ -502,7 +555,7 @@ export default function CustomerDetails() {
                 <span>Rating</span>
               </div>
 
-              {details.preferredCarers.map((carer: any, index: number) => (
+              {details?.preferredCarers.map((carer: any, index: number) => (
                 <div
                   key={index}
                   className="grid grid-cols-[1fr_auto_auto] items-center py-1"
@@ -523,7 +576,7 @@ export default function CustomerDetails() {
               ))}
 
               <div className="text-right mt-2 text-xs font-semibold">
-                Total Hours: {details.totalPreferredCarerHours}
+                Total Hours: {details?.totalPreferredCarerHours}
               </div>
             </>
           ) : (
@@ -531,7 +584,7 @@ export default function CustomerDetails() {
               label="Preferred carers"
               onAdd={() =>
                 handleNavigation(
-                  `/customers/addClient/preferred-carers/${details._id}`,
+                  `/customers/addClient/preferred-carers/${details?._id}`,
                 )
               }
             />

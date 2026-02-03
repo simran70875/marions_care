@@ -28,6 +28,8 @@ import { saveAs } from "file-saver";
 import toast from "react-hot-toast";
 import Select from "../../components/form/Select";
 import DataTable from "../../components/common/DataTable";
+import { useDispatch } from "react-redux";
+import { setCustomerContext } from "../../store/slices/selectedCustomerSlice";
 
 // types/Customer.ts
 export interface Address {
@@ -142,8 +144,6 @@ export default function CustomerPage() {
     pagination: any;
   }>();
 
-  console.log("Customer data:", data);
-
   const fetchCustomers = async () => {
     const status = statusMap[activeTab];
     const params: {
@@ -244,6 +244,8 @@ export default function CustomerPage() {
     "#FF5722", // deep orange
   ];
 
+  const dispatch = useDispatch();
+
   const columns: GridColDef<CustomerRow>[] = [
     {
       field: "avatar",
@@ -260,9 +262,20 @@ export default function CustomerPage() {
           <Box display="flex" gap={1} alignItems={"center"} height={"100%"}>
             <div
               style={{ cursor: "pointer" }}
-              onClick={() =>
-                navigate("/customer/view", { state: { id: params.row._id } })
-              }
+              onClick={() => {
+                dispatch(
+                  setCustomerContext({
+                    customerId: params.row._id,
+                    customerList:
+                      data?.data.map((c) => ({
+                        customerId: c._id,
+                        firstName: c.firstName,
+                        lastName: c.lastName,
+                      })) || [],
+                  }),
+                );
+                navigate("/customer/view");
+              }}
             >
               <Avatar sx={{ bgcolor: avatarColors[colorIndex], color: "#fff" }}>
                 {firstLetter}
@@ -277,7 +290,7 @@ export default function CustomerPage() {
     { field: "lastName", headerName: "Last Name", width: 120 },
     { field: "knownAs", headerName: "Known As", width: 120 },
     { field: "fullNameOfficial", headerName: "Official Name", width: 150 },
-    { field: "email", headerName: "Email", width: 180 },
+
     {
       field: "contactNumber",
       headerName: "Phone",
@@ -304,40 +317,7 @@ export default function CustomerPage() {
       width: 120,
       renderCell: (params) => params.row?.address?.area || "",
     },
-    {
-      field: "councilId",
-      headerName: "Council ID",
-      width: 120,
-      renderCell: (params) => params.row?.finance?.councilIdNo || "",
-    },
-    {
-      field: "contractFee",
-      headerName: "Contract Fee",
-      width: 120,
-      renderCell: (params) => params.row?.finance?.contractFee || "",
-    },
-    {
-      field: "invoiceCycle",
-      headerName: "Invoice Cycle",
-      width: 120,
-      renderCell: (params) => params.row?.finance?.invoiceCycle || "",
-    },
-    {
-      field: "payForTravel",
-      headerName: "Pay For Travel",
-      width: 120,
-      renderCell: (params) => params.row?.finance?.payForTravel || "",
-    },
-    {
-      field: "referralBy",
-      headerName: "Referral By",
-      width: 150,
-    },
-    {
-      field: "additionalInformation",
-      headerName: "Additional Info",
-      width: 150,
-    },
+
     {
       field: "status",
       headerName: "Status",

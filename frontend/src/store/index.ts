@@ -1,5 +1,8 @@
 import { configureStore, combineReducers } from "@reduxjs/toolkit";
 import authReducer from "./slices/authSlice";
+import selectedCustomerReducer  from "./slices/selectedCustomerSlice";
+import selectedCarerReducer  from "./slices/selectedCarerSlice";
+
 import {
   persistStore,
   persistReducer,
@@ -15,11 +18,13 @@ import storage from "redux-persist/lib/storage";
 const persistConfig = {
   key: "root",
   storage,
-  whitelist: ["auth"], // 👈 persist only auth
+  whitelist: ["auth", "selectedCustomer", "selectedCarer"], // 👈 persist only auth
 };
 
 const rootReducer = combineReducers({
   auth: authReducer,
+  selectedCustomer: selectedCustomerReducer,
+  selectedCarer: selectedCarerReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

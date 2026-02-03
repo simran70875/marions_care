@@ -107,7 +107,6 @@ exports.bulkUploadCustomers = async (req, res) => {
       const nameParts = row.Name.trim().split(" ");
       const firstName = nameParts.shift();
       const lastName = nameParts.join(" ") || " ";
-      console.log(`Processing row ${index + 2}: ${firstName} ${lastName}`);
 
       const hashedPassword = bcrypt.hashSync(generatePassword(), 10);
 
@@ -226,7 +225,6 @@ exports.bulkUploadCustomers = async (req, res) => {
   }
 };
 
-
 exports.getCustomers = async (req, res) => {
   try {
     const {
@@ -296,7 +294,6 @@ exports.getCustomerById = async (req, res) => {
       preferredCarers: [],
       totalPreferredCarerHours: [],
     }
-    console.log(data)
 
     res.json(data);
   } catch (error) {

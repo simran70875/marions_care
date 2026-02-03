@@ -1,8 +1,8 @@
-export const BASE_URL = "https://marions-care.onrender.com";
-export const IMAGE_URL = "https://marions-care.onrender.com/static";
+// export const BASE_URL = "https://marions-care.onrender.com";
+// export const IMAGE_URL = "https://marions-care.onrender.com/static";
 
-// export const BASE_URL = "http://localhost:8000";
-// export const IMAGE_URL = "http://localhost:8000/static";
+export const BASE_URL = "http://localhost:8000";
+export const IMAGE_URL = "http://localhost:8000/static";
 
 
 export const API_PATHS = {

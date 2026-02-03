@@ -19,6 +19,8 @@ import {
   Wallet,
 } from "lucide-react";
 import { useSidebar } from "../../../context/SidebarContext";
+import { useSelector } from "react-redux";
+import { RootState } from "../../../store";
 
 export type NavItem = {
   name: string;
@@ -60,6 +62,7 @@ const editClientSubMenu = [
 ];
 
 /** @type {NavItem[]} */
+
 const clientDetailsSidebarItems = [
   { icon: <BoxCubeIcon />, name: "Dashboard", path: "/dashboard" },
   { icon: <UserIcon />, name: "All Customers", path: "/customers/all" },
@@ -115,12 +118,12 @@ const CustomerSidebar: React.FC = () => {
 
   // track dropdowns per item, not global
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>(
-    {}
+    {},
   );
 
   const isActive = useCallback(
     (path: string) => location.pathname === path,
-    [location.pathname]
+    [location.pathname],
   );
 
   const handleMenuClick = (item: NavItem) => {
@@ -195,11 +198,7 @@ const CustomerSidebar: React.FC = () => {
     );
   };
 
-  // Mock Customer Data
-  const customer = {
-    name: "Charles 'O Connor",
-    profileImage: "https://atscaleconference.com/wp-content/uploads/2022/08/image-placeholder-person.jpg",
-  };
+  const { firstName, lastName } = useSelector( (state: RootState) => state.selectedCustomer);
 
   return (
     <aside
@@ -208,33 +207,35 @@ const CustomerSidebar: React.FC = () => {
       onMouseEnter={() => !isExpanded && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="p-6 border-b border-gray-200 flex items-center justify-between"  style={{
+      <div
+        className="p-6 border-b border-gray-200 flex items-center justify-between"
+        style={{
           height: "8vh",
-        }}>
+        }}
+      >
         <Link to="/dashboard" className="flex items-center gap-2">
           <img src="/images/logo/logo-icon.svg" alt="Logo" width={32} />
           {(isExpanded || isHovered || isMobileOpen) && (
             <span className="text-lg font-bold">MarionsCare</span>
           )}
         </Link>
-
-       
       </div>
 
-       {/* Customer Profile Section */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex flex-col items-center">
-          <img
-            src={customer.profileImage}
-            alt={customer.name}
-            className="w-14 h-14 rounded-full border-4 border-blue-500 shadow-md mb-2"
-          />
-          {
-            (isExpanded || isHovered || isMobileOpen) &&   <div className="text-center font-bold text-lg text-gray-800 dark:text-white">
-            {customer.name}
-          </div>
+      {/* Customer Profile Section */}
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex flex-col items-center">
+        <img
+          src={
+            "https://atscaleconference.com/wp-content/uploads/2022/08/image-placeholder-person.jpg"
           }
-        
-        </div>
+          alt={firstName}
+          className="w-14 h-14 rounded-full border-4 border-blue-500 shadow-md mb-2"
+        />
+        {(isExpanded || isHovered || isMobileOpen) && (
+          <div className="text-center font-bold text-lg text-gray-800 dark:text-white">
+            {firstName} {lastName}
+          </div>
+        )}
+      </div>
 
       {renderMenu(clientDetailsSidebarItems)}
     </aside>

@@ -2,7 +2,7 @@ import { Outlet } from "react-router";
 import { SidebarProvider, useSidebar } from "../../../context/SidebarContext";
 import AppHeader from "../../../layout/AppHeader";
 import Backdrop from "../../../layout/Backdrop";
-import CustomerSidebar from "./CustomerDetailsSidebar";
+import CarerSidebar from "./CarerDetailsSidebar";
 
 const LayoutContent: React.FC = () => {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
@@ -10,7 +10,7 @@ const LayoutContent: React.FC = () => {
   return (
     <div className="min-h-screen xl:flex">
       <div>
-        <CustomerSidebar />
+        <CarerSidebar />
         <Backdrop />
       </div>
       <div
@@ -30,7 +30,7 @@ const LayoutContent: React.FC = () => {
   );
 };
 
-const CustomerDetailsLayout: React.FC = () => {
+const CarerDetailsLayout: React.FC = () => {
   return (
     <SidebarProvider>
       <LayoutContent />
@@ -38,4 +38,4 @@ const CustomerDetailsLayout: React.FC = () => {
   );
 };
 
-export default CustomerDetailsLayout;
+export default CarerDetailsLayout;
