@@ -186,6 +186,7 @@ export default function CarerPage() {
   useEffect(() => {
     fetchCarers();
   }, [activeTab, search, paginationModel]);
+
   const handleTabChange = (_: any, newValue: number) => {
     setActiveTab(newValue);
   };
@@ -413,7 +414,20 @@ export default function CarerPage() {
       renderCell: (params) => (
         <IconButton
           color="primary"
-          onClick={() => navigate(`/carer/visits/${params.row._id}`)}
+          onClick={() => {
+            dispatch(
+              setCarerContext({
+                carerId: params.row._id,
+                carerList:
+                  data?.data.map((c) => ({
+                    carerId: c._id,
+                    firstName: c.firstName,
+                    lastName: c.lastName,
+                  })) || [],
+              }),
+            );
+            navigate("/carer/schedule");
+          }}
         >
           <Calendar />
         </IconButton>

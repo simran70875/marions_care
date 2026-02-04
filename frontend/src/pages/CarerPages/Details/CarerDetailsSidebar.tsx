@@ -15,6 +15,8 @@ import {
   Users,
 } from "lucide-react";
 import { useSidebar } from "../../../context/SidebarContext";
+import { RootState } from "../../../store";
+import { useSelector } from "react-redux";
 
 export type NavItem = {
   name: string;
@@ -152,12 +154,18 @@ const CarerSidebar: React.FC = () => {
     </ul>
   );
 
+    const { firstName, lastName } = useSelector(
+      (state: RootState) => state.selectedCarer,
+    );
+
   /* Mock Carer Profile */
   const carer = {
-    name: "John Smith",
+    name: `${firstName} ${lastName}`,
     profileImage:
       "https://atscaleconference.com/wp-content/uploads/2022/08/image-placeholder-person.jpg",
   };
+
+  
 
   return (
     <aside

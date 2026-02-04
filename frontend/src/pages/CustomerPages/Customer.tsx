@@ -367,7 +367,20 @@ export default function CustomerPage() {
       renderCell: (params) => (
         <IconButton
           color="primary"
-          onClick={() => navigate(`/customer/visits/${params.row?._id}`)}
+          onClick={() => {
+            dispatch(
+              setCustomerContext({
+                customerId: params.row._id,
+                customerList:
+                  data?.data.map((c) => ({
+                    customerId: c._id,
+                    firstName: c.firstName,
+                    lastName: c.lastName,
+                  })) || [],
+              }),
+            );
+            navigate("/customer/schedule");
+          }}
         >
           <Calendar />
         </IconButton>

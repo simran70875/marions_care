@@ -1,13 +1,15 @@
-// export const BASE_URL = "https://marions-care.onrender.com";
-// export const IMAGE_URL = "https://marions-care.onrender.com/static";
+export const BASE_URL = "https://marions-care.onrender.com";
+export const IMAGE_URL = "https://marions-care.onrender.com/static";
 
-export const BASE_URL = "http://localhost:8000";
-export const IMAGE_URL = "http://localhost:8000/static";
+// export const BASE_URL = "http://localhost:8000";
+// export const IMAGE_URL = "http://localhost:8000/static";
 
 
 export const API_PATHS = {
   LOGIN: "/api/auth/login",
 
+
+  // customers api's 
   ADD_CUSTOMER: "/api/customer",
   EDIT_CUSTOMER: "/api/customer",
   UPDATE_STATUS: "/api/customer/status",
@@ -19,6 +21,8 @@ export const API_PATHS = {
   EDIT_CUSTOMER_CONTACTS:"/api/customer/contacts",
   UPLOAD_BULK_CUSTOMER: "/api/customer/bulk-upload",
 
+
+  // carer api's
   ADD_CARER: "/api/carer",
   EDIT_CARER: "/api/carer",
   UPDATE_STATUS_CARER: "/api/carer/status",
@@ -29,6 +33,15 @@ export const API_PATHS = {
   RESTORE_ARCHEIVE_CARER: "/api/carer/archive/restore",
   EDIT_CARER_CONTACTS:"/api/carer/contacts",
   UPLOAD_BULK_CARER: "/api/carer/bulk-upload",
+
+  // customer shifts api's
+  GET_CUSTOMER_SHIFTS: "/api/shifts/customer",
+  CREATE_SHIFT: "/api/shifts",
+  UPDATE_SHIFT: "/api/shifts",
+  DELETE_SHIFT: "/api/shifts",
+
+
+  GET_CARER_SHIFTS: "/api/shifts/carer",
 
   AGENTS_PROFIT: ``,
   COMPARE_ORDERS: ``,

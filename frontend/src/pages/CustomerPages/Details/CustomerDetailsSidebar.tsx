@@ -117,9 +117,7 @@ const CustomerSidebar: React.FC = () => {
   const location = useLocation();
 
   // track dropdowns per item, not global
-  const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>(
-    {},
-  );
+  const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({},);
 
   const isActive = useCallback(
     (path: string) => location.pathname === path,

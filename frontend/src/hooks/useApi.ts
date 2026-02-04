@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { AxiosResponse } from "axios";
+import toast from "react-hot-toast";
 
 export function useApi<T>() {
   const [data, setData] = useState<T | null>(null);
@@ -15,7 +16,11 @@ export function useApi<T>() {
       setData(res.data); // unwrap data
       return res.data;
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || "Something went wrong");
+      const message =
+        err?.response?.data?.message || err?.message || "Something went wrong";
+
+      setError(message);
+      toast.error(message);
       throw err;
     } finally {
       setLoading(false);

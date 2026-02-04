@@ -29,10 +29,10 @@ const initialTabs = [
 // ----------------------------------------------------------------------
 // MAIN PAGE COMPONENT
 // ----------------------------------------------------------------------
-export default function CustomerDetailsPage() {
+export default function CarerDetailsPage() {
   const [activeTab, setActiveTab] = useState("Overview");
   const [tabs, setTabs] = useState(initialTabs);
-  // Use a separate state to show/hide the AddNewTabForm
+  // Use a separate state to show/hide the AddNewTabForms
   const [isAddingTab, setIsAddingTab] = useState(false);
 
   const handleTabClick = (tabName: string) => {
@@ -120,7 +120,7 @@ export default function CustomerDetailsPage() {
               setActiveTab("New Tab"); // Set a pseudo active tab for styling the button
             }}
             className={addTabClass}
-            title="Add New Tab To All Customers"
+            title="Add New Tab To All Carers"
           >
             <i className="fas fa-plus mr-1"></i> Add New Tab
           </button>

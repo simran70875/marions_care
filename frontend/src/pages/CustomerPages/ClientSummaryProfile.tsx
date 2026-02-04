@@ -24,12 +24,10 @@ import {
 } from "../../store/slices/selectedCustomerSlice";
 import { CustomerDetailsSkeleton } from "./CustomerDetailsSkeleton";
 
-// =================================================================
-// 1. TYPE DEFINITIONS & DUMMY DATA
-// =================================================================
+
 
 // =================================================================
-// 2. HELPER COMPONENTS
+// 1. HELPER COMPONENTS
 // =================================================================
 
 const DetailItem: React.FC<{ label: string; value: React.ReactNode }> = ({
