@@ -55,9 +55,16 @@ try {
   console.error('❌ Failed to load customer.routes:', err.message);
 }
 
-// customer/carer shifts route
+// customer/carer shifts route for admin
 try {
   app.use('/api/shifts', require('./routes/shift.routes'));
+} catch (err) {
+  console.error('❌ Failed to load shifts.routes:', err.message);
+}
+
+// customer shifts route for just customer
+try {
+  app.use('/customer/shifts', require('./routes/customer.shift.route'));
 } catch (err) {
   console.error('❌ Failed to load shifts.routes:', err.message);
 }

@@ -43,6 +43,8 @@ export const API_PATHS = {
 
   GET_CARER_SHIFTS: "/api/shifts/carer",
 
+  GET_PRIVATE_CUSTOMER_SHIFTS: "/customer/shifts",
+
   AGENTS_PROFIT: ``,
   COMPARE_ORDERS: ``,
   MONTHLY_PROFITS: ``,

@@ -1,3 +1,4 @@
+const Customer = require("../models/Customer");
 const Shift = require("../models/Shift");
 
 /* =========================================================
@@ -123,6 +124,44 @@ exports.deleteShift = async (req, res) => {
       success: true,
       message: "Shift deleted successfully",
     });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+
+/* =========================================================
+   GET SHIFTS FOR CUSTOMER (Calendar View)
+   /api/shifts/customer get userid from token 
+========================================================= */
+exports.getPrivateCustomerShifts = async (req, res) => {
+  try {
+    const { userId } = req.user;
+    const { month } = req.query;
+
+    const customer = await Customer.findOne({ userId: userId });
+    if (!customer) {
+      return res.status(404).json({ success: false, message: "customer not found" });
+    }
+
+    console.log("customer ", customer);
+    
+
+    const customerId = customer?._id;
+
+    let filter = { customerId };
+
+    if (month) {
+      const start = new Date(`${month}-01`);
+      const end = new Date(start);
+      end.setMonth(end.getMonth() + 1);
+
+      filter.date = { $gte: start, $lt: end };
+    }
+
+    const shifts = await Shift.find({customerId: customerId}).populate("carerId", "firstName lastName").populate("customerId", "firstName lastName").sort({ date: 1, startTime: 1 });
+
+    res.json({ success: true, data: shifts });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

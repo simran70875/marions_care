@@ -49,7 +49,7 @@ interface Shift {
 // 3. COMPONENTS
 // =================================================================
 
-const LegendItem: React.FC<{ color: string; label: string }> = ({
+export const LegendItem: React.FC<{ color: string; label: string }> = ({
   color,
   label,
 }) => (
@@ -120,9 +120,7 @@ const ClientSchedulePage: React.FC = () => {
   const [carers, setCarers] = useState<any[]>([]);
 
   const { call, loading } = useApi<any>();
-  const { customerId, firstName, lastName } = useSelector(
-    (state: RootState) => state.selectedCustomer,
-  );
+  const { customerId, firstName, lastName } = useSelector((state: RootState) => state.selectedCustomer);
 
   const fetchShifts = async () => {
     if (!customerId) return;

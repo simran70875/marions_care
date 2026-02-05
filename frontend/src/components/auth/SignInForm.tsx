@@ -11,9 +11,7 @@ import { authService } from "../../services/auth.service";
 import { useApi } from "../../hooks/useApi";
 
 export default function SignInForm() {
-  const [activeTab, setActiveTab] = useState<"superadmin" | "carer">(
-    "superadmin",
-  );
+  const [activeTab, setActiveTab] = useState<"superadmin" | "carer" | "client">("superadmin");
   const [showPassword, setShowPassword] = useState(false);
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
@@ -42,7 +40,8 @@ export default function SignInForm() {
       const { token, user } = data;
 
       const isAdmin = user.role === "superadmin" || user.role === "admin";
-      const storageKey = isAdmin ? "adminToken" : "carerToken";
+      const isCarer = user.role === "carer";
+      const storageKey = isAdmin ? "adminToken" : isCarer ? "carerToken" : "clientToken";
 
       localStorage.setItem(storageKey, token);
 
@@ -56,7 +55,7 @@ export default function SignInForm() {
 
       toast.success("Login successful 🎉", { id: toastId });
 
-      navigate(isAdmin ? "/dashboard" : "/carer/dashboard");
+      navigate(isAdmin ? "/dashboard" : isCarer ? "/carer/dashboard" : "/customer/dashboard");
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Login failed", {
         id: toastId,
@@ -79,18 +78,20 @@ export default function SignInForm() {
           <div>
             {/* Tabs */}
             <div className="mb-6 flex border-b border-gray-200 dark:border-gray-700">
-              {["superadmin", "carer"].map((tab) => (
+              {["superadmin", "carer", "Client"].map((tab) => (
                 <button
                   key={tab}
                   type="button"
-                  onClick={() => setActiveTab(tab as "superadmin" | "carer")}
+                  onClick={() =>
+                    setActiveTab(tab as "superadmin" | "carer" | "client")
+                  }
                   className={`px-4 py-2 text-sm font-medium border-b-2 ${
                     activeTab === tab
                       ? "border-blue-500 text-blue-600"
                       : "border-transparent text-gray-500 hover:text-gray-700"
                   }`}
                 >
-                  {tab === "superadmin" ? "Super Admin" : "Carer"}
+                  {tab === "superadmin" ? "Super Admin" : tab === "carer"  ? "Carer"  : "Client Login"}
                 </button>
               ))}
             </div>

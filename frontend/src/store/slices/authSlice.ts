@@ -3,7 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 interface AuthState {
   user: any;
   token: string | null;
-  role: "admin" | "superadmin" | "carer" | null;
+  role: "admin" | "superadmin" | "carer" | "client" | null;
   isAuthenticated: boolean;
 }
 

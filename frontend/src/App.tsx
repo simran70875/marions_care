@@ -114,6 +114,25 @@ import CarerDetailsLayout from "./pages/CarerPages/Details/CarerDetailsLayout.ts
 import CarerSummaryDetails from "./pages/CarerPages/CarerSummaryProfile.tsx";
 import CarerDetailsPage from "./pages/CarerPages/Details/CarerDetails.tsx";
 import CarerSchedulePage from "./pages/CarerPages/Details/Schedules.tsx";
+import CustomerPanelLayout from "./CusotmerPages/CusotmerLayout.tsx";
+import CustomerDashboard from "./CusotmerPages/Dashboard.tsx";
+import CustomerProfileScreen from "./CusotmerPages/Profile.tsx";
+import CustomerResidentDirectory from "./CusotmerPages/Residents.tsx";
+import CustomerVisitSchedule from "./CusotmerPages/VisitSchedule.tsx";
+import CustomerLogsPage from "./CusotmerPages/CustomerLogsPage.tsx";
+import CustomerEMARPage from "./CusotmerPages/EmarMedication.tsx";
+import ReportsCustomerPlans from "./CusotmerPages/ReportCusotmerPlans.tsx";
+import DailyCustomerLogs from "./CusotmerPages/DailyCusotmerLogs.tsx";
+import CustomerDocumentListScreen from "./CusotmerPages/DocumentList.tsx";
+import CustomerIncidentReports from "./CarerPages/IncidentReports.tsx";
+import CustomerTimesheet from "./CusotmerPages/MyShifts.tsx";
+import CustomerUpcomingShifts from "./CusotmerPages/UpcomingShift.tsx";
+import CustomerRequestLeave from "./CusotmerPages/RequestLeave.tsx";
+import CustomerHolidayBalance from "./CusotmerPages/HolidayBalance.tsx";
+import CustomerHolidayCalendar from "./CusotmerPages/HolidayCalendar.tsx";
+import CustomerNotificationsScreen from "./CusotmerPages/Notifications.tsx";
+import CustomerHandoverNotes from "./CusotmerPages/HandoverNotes.tsx";
+import CustomerAccountSettings from "./CusotmerPages/AccountSettings.tsx";
 
 export default function App() {
   const [showInitialLoader, setShowInitialLoader] = useState(() => {
@@ -150,8 +169,7 @@ export default function App() {
 
         {/* Protected Admin Routes */}
         <Route>
-          <Route
-            element={
+          <Route element={
               <ProtectedRoute role="admin">
                 <AppLayout />
               </ProtectedRoute>
@@ -544,6 +562,35 @@ export default function App() {
           />
           <Route path="/carer/me/handover" element={<HandoverNotes />} />
           <Route path="/carer/me/settings" element={<AccountSettings />} />
+        </Route>
+
+
+           {/* customer panel screens after customer login */}
+        <Route
+          element={
+            <ProtectedRoute role="client">
+              <CustomerPanelLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/customer/dashboard" element={<CustomerDashboard />} />
+          <Route path="/customer/me/profile" element={<CustomerProfileScreen />} />
+          <Route path="/customer/residents/my-list" element={<CustomerResidentDirectory />}/>
+          <Route path="/customer/residents/schedule" element={<CustomerVisitSchedule />} />
+          <Route path="/customer/residents/logs" element={<CustomerLogsPage />} />
+          <Route path="/customer/residents/medication" element={<CustomerEMARPage />} />
+          <Route path="/customer/residents/reports/summary"  element={<ReportsCustomerPlans />}/>
+          <Route path="/customer/residents/reports/daily-logs" element={<DailyCustomerLogs />}/>
+          <Route path="/customer/residents/reports/incidents" element={<CustomerIncidentReports />}/>
+          <Route path="/customer/residents/reports/documents" element={<CustomerDocumentListScreen />}/>
+          <Route path="/customer/me/hours/timesheets" element={<CustomerTimesheet />}/>
+          <Route path="/customer/me/hours/upcoming" element={<CustomerUpcomingShifts />} />
+          <Route path="/customer/me/holidays/request" element={<CustomerRequestLeave />} />
+          <Route  path="/customer/me/holidays/balance" element={<CustomerHolidayBalance />}/>
+          <Route path="/customer/me/holidays/calendar" element={<CustomerHolidayCalendar />}/>
+          <Route path="/customer/me/notifications" element={<CustomerNotificationsScreen />}/>
+          <Route path="/customer/me/handover" element={<CustomerHandoverNotes />} />
+          <Route path="/customer/me/settings" element={<CustomerAccountSettings />} />
         </Route>
 
         {/* 404 Page */}
